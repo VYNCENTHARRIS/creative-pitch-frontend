@@ -14,6 +14,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { IconLayoutDashboard, IconMenu2, IconPencil } from '@tabler/icons-react'
 import { Link, useLocation } from 'react-router'
 import { AppRoutes } from './router'
+import { writingCanvasEnabled } from './development'
 
 export function App() {
   const [opened, { open, close }] = useDisclosure(false)
@@ -21,11 +22,27 @@ export function App() {
   const overview = (
     <NavLink
       component={Link}
+      w="auto"
+      style={{ flexShrink: 0 }}
       to="/"
       label="Overview"
       active={pathname === '/'}
       aria-current={pathname === '/' ? 'page' : undefined}
       leftSection={<IconLayoutDashboard size={18} aria-hidden="true" />}
+      onClick={close}
+    />
+  )
+  const writingCanvas = writingCanvasEnabled && (
+    <NavLink
+      component={Link}
+      w="auto"
+      style={{ flexShrink: 0 }}
+      to="/spikes/writing-canvas"
+      label="Writing Canvas Spike"
+      description="Development only"
+      active={pathname === '/spikes/writing-canvas'}
+      aria-current={pathname === '/spikes/writing-canvas' ? 'page' : undefined}
+      leftSection={<IconPencil size={18} aria-hidden="true" />}
       onClick={close}
     />
   )
@@ -55,7 +72,12 @@ export function App() {
               </Group>
             </Anchor>
             <Group visibleFrom="sm" gap="xl">
-              <nav aria-label="Main navigation">{overview}</nav>
+              <nav aria-label="Main navigation">
+                <Group gap="xs" wrap="nowrap">
+                  {overview}
+                  {writingCanvas}
+                </Group>
+              </nav>
               <Badge color="gray" variant="light">
                 Foundation
               </Badge>
@@ -84,6 +106,7 @@ export function App() {
       >
         <nav id="mobile-navigation" aria-label="Mobile navigation">
           {overview}
+          {writingCanvas}
         </nav>
       </Drawer>
       <AppShell.Main id="main-content" tabIndex={-1}>

@@ -21,6 +21,9 @@ as part of frontend work.
   do not reconstruct its product rules in the client.
 - Only infrastructure endpoints exist. Never invent authentication or persisted
   product behavior. Label static examples as Design preview.
+- The development-only Mantine/Tiptap writing-canvas spike may keep one explicit
+  browser test snapshot in its feature. This is disposable experiment storage,
+  not product persistence; keep its route and navigation out of production.
 - Use the shared fetch client and validated VITE_BACKEND_URL. Vite variables
   are public. Send no credentials or auth headers until transport is scoped.
   Preserve structured errors internally; never render raw stack traces or HTML.

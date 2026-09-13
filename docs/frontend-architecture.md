@@ -20,7 +20,9 @@ claim of full FSD compliance.
 - `app`: provider composition, router, theme, shell, and global styles.
 - `pages`: compose features and generic UI; avoid domain behavior.
 - `features/system-status`: owns infrastructure API contracts, queries,
-  presentation, and nearby behavior tests. It is the only current feature.
+  presentation, and nearby behavior tests.
+- `features/writing-canvas-spike`: development-only editor, synthetic sample,
+  browser snapshot operations, read-only rendering, and nearby tests.
 - `shared/api`: fetch transport and structured errors.
 - `shared/config`: early public environment validation.
 - `shared/lib`: genuinely generic helpers used by multiple layers.
@@ -40,7 +42,11 @@ Each test render creates a fresh QueryClient.
 
 React Router uses declarative BrowserRouter/Routes/Route imports from
 `react-router`. This is an ordinary SPA, with no framework/SSR stack.
-Current routes are `/` (FoundationPage) and `*` (NotFoundPage).
+Production routes are `/` (FoundationPage) and `*` (NotFoundPage). The shared
+`writingCanvasEnabled` Vite development guard controls route registration and
+desktop/mobile navigation for `/spikes/writing-canvas`. A literal
+`import.meta.env.DEV` also surrounds the lazy import so production emits no
+editor assets. Overview does not load the editor or initialize snapshot storage.
 
 Proposed future routes, not implemented:
 
@@ -110,8 +116,8 @@ not stored reviews or finalized product tokens. Live ready uses brand blue.
 Use system fonts, moderate radii, subtle borders, generous spacing, and minimal
 shadows. Tabler React icons support text; no emojis in any project content.
 
-Mantine AppShell provides the fixed top header and main region. Desktop has one
-Overview link, not a large sidebar. A labeled mobile control opens a Mantine
+Mantine AppShell provides the fixed top header and main region. Desktop has compact
+Overview navigation plus the development-only Writing Canvas Spike item. A labeled mobile control opens a Mantine
 Drawer with focus management, Escape dismissal, and a close control. Content
 stacks through Mantine responsive props. Preserve visible keyboard focus,
 semantic headings/controls, a skip link, readable text, and usable touch targets.
@@ -153,12 +159,69 @@ The working post-approval stages are Writer's Room, Creative Review, VP Pitch,
 and Final Creator Pitch. The frontend displays state and sends authorized
 actions; it must not recreate workflow/scoring/permissions as a second engine.
 
-## Future editor and integration boundary
+## Writing-canvas spike and future boundary
 
-Scope an editor spike separately. Start with Mantine's Tiptap integration;
-compare BlockNote if needed. Prove rich typing, serialization, save/reload,
-read-only rendering, cloning old content into a new draft, and mobile behavior.
-The persisted editor format is not selected. No editor, form, Dropzone, auth,
-storage, upload, or AI packages are installed. Mantine Dropzone remains a likely
-future image-input primitive, not a current implementation. Authentication,
-editor work, and product integration each need their own scoped task.
+`pages/WritingCanvasSpikePage` only composes the feature's public index.
+The feature owns its editor configuration, writing wrapper, read-only renderer,
+link dialog, synthetic sample, and snapshot controls. It imports no app/pages
+or product API code. See the [README](../README.md#writing-canvas-development-spike)
+for startup, exact package versions, action semantics, and official references.
+
+Mantine supplies controls and document framing; Tiptap owns body content,
+selection, and undo history. Title state stays inside the writing wrapper.
+The parent holds snapshot metadata and action state, and reads title plus
+`editor.getJSON()` only for explicit actions through a small component ref.
+It does not duplicate a live document in context or TanStack Query. Transaction
+rerenders remain inside the editor component. Preview keeps writing mounted;
+reload, clone, sample loading, and clearing replace the editor's key for a fresh
+instance and clean undo history. Undo is not product version history.
+
+Editable and read-only instances use the same supported document extensions:
+paragraphs, H1–H3, bold, italic, lists, hard breaks, and safe HTTP(S) links.
+StarterKit's Link, underline, strike, code, code blocks, blockquotes, and horizontal
+rules are disabled. Mantine's Link replaces StarterKit's Link; there is only one
+undo implementation. The read-only instance is non-editable and also rejects
+document-changing transactions, including keyboard formatting commands.
+New-tab link attributes are constrained to safe targets and rel protection.
+
+The 920 px white surface uses a 72ch body column, 17 px text, 1.65 line spacing,
+56 px desktop margins, and 20 px narrow margins. The desktop toolbar sits below
+AppShell's actual header-offset variable. Narrow screens wrap controls and disable
+toolbar stickiness. Documents scroll with the page. Feature CSS is scoped, and
+editor package CSS is lazy loaded after Mantine core. The shared theme/resolver
+and the Overview layout remain the foundation.
+
+One namespaced localStorage key holds `{ format, title, document, savedAt }`.
+There are no product IDs, users, permissions, versions, or backend persistence.
+Serialization and cloning detach stored/source content from working content.
+Snapshot reads parse the envelope, run ProseMirror `nodeFromJSON` and `check`,
+and constrain heading/list values that the base schemas leave open. Link
+attribute validation is part of the shared extension. Invalid stored documents
+remain stored rather than being silently stripped on reload. Ordinary paste
+uses the supported editor schema to retain available text and formatting.
+This is prototype input handling, not future server validation.
+
+Save, reload, clone, clear, replacement, and deletion are explicit actions with
+local Mantine confirmations where content could be lost. JSON is rendered as
+escaped text, and preview renders through Tiptap. No arbitrary JSON/HTML import,
+`dangerouslySetInnerHTML`, autosave, global navigation guard, or storage-wide clear
+is used. Storage is specific to a browser profile and origin; localhost ports
+and hostname variants do not share snapshots. Storage errors are visible without
+announcing success. Cross-tab storage events refresh the displayed snapshot;
+replacement/deletion recheck the captured value before writing.
+
+The wrapper, constrained extension configuration, typography, and read-only
+renderer are candidates for a later real editor integration after evaluation.
+The sample, snapshot envelope/key, localStorage helpers, test controls, and
+spike-only routing are deliberately disposable. The production schema,
+authentication, real draft persistence, immutable published versions, review
+workflow, and image input remain undecided or unimplemented. No second editor
+was installed or compared.
+
+Local verification covers complete normalized JSON round trips, read-only
+protection, detached-copy immutability, corrupted/unavailable storage, control
+names, confirmations, and development route guards. Real Chrome checks cover
+desktop/narrow writing, selection, formatting, paste, links, reload after refresh,
+focus, scrolling, and production exclusion. jsdom's minimal font/layout stubs do
+not verify browser geometry; physical mobile keyboards and touch selection remain
+unverified. Suitability is provisional until Vyncent tries the writing experience.

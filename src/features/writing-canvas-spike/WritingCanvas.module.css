@@ -1,0 +1,162 @@
+.root {
+  max-width: 920px;
+  margin-inline: auto;
+  min-width: 0;
+}
+
+.paper {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  min-width: 0;
+}
+
+.toolbar {
+  background: white;
+  padding: 12px 20px;
+  gap: 12px;
+  z-index: 10;
+  border-radius: 10px 10px 0 0;
+}
+
+.control {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.styleSelect {
+  width: 138px;
+
+  select {
+    min-height: 40px;
+  }
+}
+
+.document {
+  padding: 40px 56px 56px;
+}
+
+.titleInput,
+.previewTitle {
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  color: var(--text);
+  margin: 0 0 24px;
+  padding: 0;
+  overflow-wrap: anywhere;
+}
+
+.titleInput:focus-visible {
+  outline: 2px solid var(--mantine-color-brand-7);
+  outline-offset: 6px;
+}
+
+.body {
+  background: white;
+  font-size: 17px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+
+  :global(.tiptap) {
+    padding: 0;
+    min-height: 400px;
+    max-width: 72ch;
+    margin-inline: auto;
+  }
+
+  :global(.tiptap):focus-visible {
+    outline: 2px solid var(--mantine-color-brand-7);
+    outline-offset: 10px;
+  }
+
+  p {
+    margin: 0 0 1em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin: 1.25em 0 0.55em;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+  h2 {
+    font-size: 23px;
+  }
+  h3 {
+    font-size: 20px;
+  }
+
+  :global(.tiptap) > :first-child {
+    margin-top: 0;
+  }
+
+  ul,
+  ol {
+    padding-left: 1.6em;
+    margin-block: 0 1em;
+  }
+
+  li p {
+    margin-bottom: 0.35em;
+  }
+
+  a {
+    color: var(--mantine-color-brand-7);
+    text-decoration: underline;
+  }
+
+  :global(.is-editor-empty):first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--muted);
+  }
+}
+
+.tools {
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+  padding-top: 24px;
+}
+
+.json {
+  max-height: 360px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 16px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+@media (max-width: $mantine-breakpoint-sm) {
+  .toolbar {
+    position: static;
+    padding: 10px;
+    gap: 8px;
+  }
+  .control {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .document {
+    padding: 28px 20px 36px;
+  }
+  .body :global(.tiptap) {
+    min-height: 340px;
+  }
+  .titleInput,
+  .previewTitle {
+    font-size: 28px;
+  }
+}
