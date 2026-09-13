@@ -1,0 +1,85 @@
+body {
+  min-width: 320px;
+}
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+:focus-visible {
+  outline: 2px solid #004990;
+  outline-offset: 4px;
+}
+.mantine-Paper-root,
+.mantine-AppShell-header {
+  border-color: var(--border);
+}
+.mantine-NavLink-root {
+  border-radius: 6px;
+  min-height: 44px;
+}
+.mantine-Badge-label {
+  overflow: visible;
+}
+.brand-link {
+  flex-shrink: 0;
+}
+.eyebrow {
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.page-title {
+  font-size: clamp(2.15rem, 5vw, 2.75rem);
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+}
+.section-title {
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+.connection-summary {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.service-cell {
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.preview-card {
+  height: 100%;
+  border-top: 3px solid #6ba3d6;
+}
+.status-example {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.skip-link {
+  position: fixed;
+  top: -80px;
+  left: 16px;
+  z-index: 1000;
+  padding: 12px;
+  background: white;
+  color: #004990;
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+@media (max-width: $mantine-breakpoint-sm) {
+  .service-cell {
+    padding: 16px;
+  }
+  .status-heading {
+    align-items: flex-start;
+  }
+}
