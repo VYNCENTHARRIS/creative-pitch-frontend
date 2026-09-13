@@ -6,7 +6,6 @@ import {
   Loader,
   Paper,
   SimpleGrid,
-  Stack,
   Text,
   ThemeIcon,
   Title,
@@ -21,6 +20,7 @@ import {
 } from '@tabler/icons-react'
 import { useSystemStatus } from '../hooks/useSystemStatus'
 import type { ConnectionState } from '../types/status'
+import classes from './SystemStatus.module.css'
 
 const states = {
   checking: {
@@ -73,10 +73,15 @@ export function SystemStatus() {
           : 'Unconfirmed'
 
   return (
-    <Paper component="section" aria-labelledby="connection-title" p={{ base: 20, sm: 28 }}>
-      <Group justify="space-between" gap="md" mb="lg" className="status-heading">
+    <Paper
+      component="section"
+      aria-labelledby="connection-title"
+      p={{ base: 20, sm: 24 }}
+      className={classes.panel}
+    >
+      <Group justify="space-between" gap="sm" mb="md" align="flex-start">
         <Group gap="sm">
-          <Title order={2} id="connection-title" className="section-title">
+          <Title order={2} id="connection-title" className={classes.title}>
             System connection
           </Title>
           <Badge variant="light" color="brand">
@@ -94,8 +99,8 @@ export function SystemStatus() {
           Retry
         </Button>
       </Group>
-      <Stack gap="md" role="status" aria-live="polite" aria-atomic="true">
-        <Group wrap="nowrap" align="flex-start" gap="md" p="lg" className="connection-summary">
+      <div className={classes.content} role="status" aria-live="polite" aria-atomic="true">
+        <Group wrap="nowrap" align="flex-start" gap="sm">
           <ThemeIcon variant="light" color={color} size={40} radius="md">
             {state === 'checking' ? <Loader size={20} /> : <Icon size={22} aria-hidden="true" />}
           </ThemeIcon>
@@ -108,8 +113,8 @@ export function SystemStatus() {
             </Text>
           </div>
         </Group>
-        <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md">
-          <Group justify="space-between" className="service-cell">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md" className={classes.services}>
+          <Group justify="space-between" gap="xs" className={classes.service}>
             <Group gap="sm">
               <IconServer size={19} color="#64748B" aria-hidden="true" />
               <Text size="sm" fw={500}>
@@ -120,7 +125,7 @@ export function SystemStatus() {
               {apiLabel}
             </Text>
           </Group>
-          <Group justify="space-between" className="service-cell">
+          <Group justify="space-between" gap="xs" className={classes.service}>
             <Group gap="sm">
               <IconDatabase size={19} color="#64748B" aria-hidden="true" />
               <Text size="sm" fw={500}>
@@ -132,8 +137,8 @@ export function SystemStatus() {
             </Text>
           </Group>
         </SimpleGrid>
-      </Stack>
-      <Divider my="lg" color="var(--border)" />
+      </div>
+      <Divider my="md" color="var(--border)" />
       <Group justify="space-between" gap="xs">
         <Text size="xs" c="dimmed">
           {info

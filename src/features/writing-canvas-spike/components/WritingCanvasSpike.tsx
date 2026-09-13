@@ -123,14 +123,17 @@ export function WritingCanvasSpike() {
 
   return (
     <div className={classes.root}>
-      <Stack gap="sm" mb="lg">
+      <Stack gap="sm" mb="lg" className={classes.introduction}>
+        <Text className={classes.eyebrow}>Editor experiment</Text>
         <Group justify="space-between">
-          <Title order={1} size="h3">
+          <Title order={1} className={classes.pageTitle}>
             Writing Canvas Spike
           </Title>
-          <Badge color="gray">Design preview</Badge>
+          <Badge color="gray" variant="light">
+            Design preview
+          </Badge>
         </Group>
-        <Text size="sm" c="dimmed">
+        <Text size="sm" c="dimmed" lh={1.65}>
           Development spike. Test snapshots stay in this browser and are not saved to Creative
           Pitch. Only saved test snapshots survive a page refresh. Use sample content, not
           confidential pitches.
@@ -138,9 +141,10 @@ export function WritingCanvasSpike() {
       </Stack>
 
       <Group justify="space-between" mb="md" gap="sm">
-        <Group gap="xs">
+        <Group gap="xs" className={classes.modeControls}>
           <Button
             size="sm"
+            className={classes.modeButton}
             variant={!showingPreview ? 'light' : 'subtle'}
             leftSection={<IconPencil size={16} />}
             aria-pressed={!showingPreview}
@@ -150,6 +154,7 @@ export function WritingCanvasSpike() {
           </Button>
           <Button
             size="sm"
+            className={classes.modeButton}
             variant={showingPreview ? 'light' : 'subtle'}
             leftSection={<IconEye size={16} />}
             disabled={!validSnapshot}
@@ -178,7 +183,7 @@ export function WritingCanvasSpike() {
         )}
       </Group>
 
-      <Text size="sm" c="dimmed" mb="sm">
+      <Text size="sm" c="dimmed" mb="sm" className={classes.metadata}>
         {showingPreview
           ? 'Saved test snapshot · Read-only. Your working copy is kept separately.'
           : `${working.copied ? 'Copy of saved test snapshot' : 'Working copy'} · ${changed ? 'Unsaved changes' : 'Ready to write'}`}
@@ -196,7 +201,7 @@ export function WritingCanvasSpike() {
       <section className={classes.tools} aria-labelledby="snapshot-heading">
         <Stack gap="md">
           <div>
-            <Title order={2} size="h4" id="snapshot-heading">
+            <Title order={2} size="h4" id="snapshot-heading" c="var(--heading)">
               Test snapshot
             </Title>
             <Text size="sm" c="dimmed" mt={4}>
@@ -207,13 +212,20 @@ export function WritingCanvasSpike() {
                   : stored.message}
             </Text>
           </div>
-          <Group gap="sm">
-            <Button size="sm" onClick={save} disabled={showingPreview}>
+          <Group gap="sm" className={classes.toolActions}>
+            <Button
+              size="sm"
+              variant="light"
+              onClick={save}
+              disabled={showingPreview}
+              classNames={{ root: classes.toolButton, label: classes.toolButtonLabel }}
+            >
               Save test snapshot
             </Button>
             <Button
               size="sm"
               variant="default"
+              classNames={{ root: classes.toolButton, label: classes.toolButtonLabel }}
               leftSection={<IconRefresh size={16} />}
               disabled={!validSnapshot}
               onClick={() => restore(false)}
@@ -223,6 +235,7 @@ export function WritingCanvasSpike() {
             <Button
               size="sm"
               variant="default"
+              classNames={{ root: classes.toolButton, label: classes.toolButtonLabel }}
               leftSection={<IconCopy size={16} />}
               disabled={!validSnapshot}
               onClick={() => restore(true)}
@@ -230,7 +243,7 @@ export function WritingCanvasSpike() {
               Clone snapshot to working copy
             </Button>
           </Group>
-          <Group gap="sm">
+          <Group gap="sm" className={classes.storageActions}>
             <Button
               size="sm"
               variant="subtle"
@@ -292,7 +305,7 @@ export function WritingCanvasSpike() {
           <Text size="sm" role="status" aria-live="polite">
             {message}
           </Text>
-          <details>
+          <details className={classes.inspector}>
             <summary>Inspect saved JSON</summary>
             <Text size="xs" c="dimmed" mt="xs">
               Actual stored envelope. This does not include unsaved working changes.
@@ -317,6 +330,7 @@ export function WritingCanvasSpike() {
             Cancel
           </Button>
           <Button
+            classNames={{ root: classes.toolButton, label: classes.toolButtonLabel }}
             onClick={() => {
               const action = confirmation?.action
               setConfirmation(null)

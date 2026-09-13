@@ -1,0 +1,33 @@
+.brandLink {
+  flex-shrink: 0;
+}
+
+.brandIcon {
+  color: var(--mantine-color-brand-7);
+  background: var(--mantine-color-brand-0);
+  border: 1px solid var(--border-blue);
+  box-shadow: 0 4px 12px rgba(2, 33, 105, 0.08);
+}
+
+.navigation {
+  flex-shrink: 0;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--mantine-radius-md);
+
+  &[data-active] {
+    color: var(--mantine-color-brand-7);
+    background: var(--mantine-color-brand-0);
+    border-color: var(--border-blue);
+  }
+}
+
+.drawerTitle {
+  color: var(--heading);
+  font-weight: 700;
+}
+
+.drawerNavigation {
+  display: grid;
+  gap: 8px;
+}

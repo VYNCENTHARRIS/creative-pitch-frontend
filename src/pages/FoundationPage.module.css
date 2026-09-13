@@ -1,0 +1,134 @@
+.introduction {
+  display: grid;
+  gap: 28px;
+  align-items: center;
+  padding: 28px;
+  background: var(--workspace-wash);
+  border: 1px solid var(--border-blue);
+  border-radius: var(--mantine-radius-lg);
+
+  &[data-has-canvas='true'] {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mantine-color-brand-7);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  &::before {
+    content: '';
+    width: 24px;
+    height: 2px;
+    flex-shrink: 0;
+    background: #0072ce;
+    border-radius: 2px;
+  }
+}
+
+.title {
+  color: var(--heading);
+  font-size: clamp(34px, 4vw, 48px);
+  font-weight: 750;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.destination {
+  padding: 24px;
+  min-width: 0;
+  color: white;
+  border-radius: var(--mantine-radius-lg);
+  background:
+    radial-gradient(circle at 88% 18%, rgba(2, 132, 199, 0.25), transparent 45%),
+    linear-gradient(135deg, #022169 0%, #06357d 56%, #004990 100%);
+  box-shadow: 0 12px 32px rgba(2, 33, 105, 0.12);
+}
+
+.destinationIcon {
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.developmentLabel {
+  color: #d9eaf8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.destinationAction {
+  color: var(--heading);
+  background: white;
+  border: 1px solid var(--border-blue);
+  max-width: 100%;
+
+  &:hover {
+    color: var(--heading);
+    background: var(--mantine-color-brand-0);
+  }
+
+  &:focus-visible {
+    outline-color: white;
+  }
+}
+
+.sectionTitle {
+  color: var(--heading);
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+
+.previewCard {
+  height: 100%;
+  border-radius: var(--mantine-radius-lg);
+  box-shadow: var(--surface-shadow);
+}
+
+.previewIcon {
+  color: var(--mantine-color-brand-7);
+  background: var(--mantine-color-brand-0);
+  border: 1px solid var(--border-blue);
+}
+
+.statusExample {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: var(--mantine-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: $mantine-breakpoint-sm) {
+  .introduction {
+    padding: 20px;
+    gap: 24px;
+
+    &[data-has-canvas='true'] {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .destination {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 360px) {
+  .introduction,
+  .destination {
+    padding: 16px;
+  }
+
+  .destinationAction {
+    padding-inline: 10px;
+  }
+}

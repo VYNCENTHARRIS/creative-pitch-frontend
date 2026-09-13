@@ -15,6 +15,7 @@ import { IconLayoutDashboard, IconMenu2, IconPencil } from '@tabler/icons-react'
 import { Link, useLocation } from 'react-router'
 import { AppRoutes } from './router'
 import { writingCanvasEnabled } from './development'
+import classes from './App.module.css'
 
 export function App() {
   const [opened, { open, close }] = useDisclosure(false)
@@ -23,7 +24,7 @@ export function App() {
     <NavLink
       component={Link}
       w="auto"
-      style={{ flexShrink: 0 }}
+      className={classes.navigation}
       to="/"
       label="Overview"
       active={pathname === '/'}
@@ -36,7 +37,7 @@ export function App() {
     <NavLink
       component={Link}
       w="auto"
-      style={{ flexShrink: 0 }}
+      className={classes.navigation}
       to="/spikes/writing-canvas"
       label="Writing Canvas Spike"
       description="Development only"
@@ -59,14 +60,14 @@ export function App() {
               component={Link}
               to="/"
               underline="never"
-              className="brand-link"
+              className={classes.brandLink}
               aria-label="Creative Pitch home"
             >
               <Group gap={10} wrap="nowrap">
-                <ThemeIcon size={36} radius="md">
+                <ThemeIcon size={38} radius="md" className={classes.brandIcon}>
                   <IconPencil size={21} aria-hidden="true" />
                 </ThemeIcon>
-                <Text fw={700} size="lg" c="var(--text)">
+                <Text fw={700} size="lg" c="var(--heading)">
                   Creative Pitch
                 </Text>
               </Group>
@@ -103,14 +104,19 @@ export function App() {
         position="right"
         size="xs"
         closeButtonProps={{ 'aria-label': 'Close navigation' }}
+        classNames={{ title: classes.drawerTitle }}
       >
-        <nav id="mobile-navigation" aria-label="Mobile navigation">
+        <nav
+          id="mobile-navigation"
+          aria-label="Mobile navigation"
+          className={classes.drawerNavigation}
+        >
           {overview}
           {writingCanvas}
         </nav>
       </Drawer>
       <AppShell.Main id="main-content" tabIndex={-1}>
-        <Container size="lg" py={{ base: 32, sm: 52 }}>
+        <Container size="lg" py={{ base: 24, sm: 36 }}>
           <AppRoutes />
         </Container>
       </AppShell.Main>

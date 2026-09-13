@@ -43,10 +43,13 @@ Each test render creates a fresh QueryClient.
 React Router uses declarative BrowserRouter/Routes/Route imports from
 `react-router`. This is an ordinary SPA, with no framework/SSR stack.
 Production routes are `/` (FoundationPage) and `*` (NotFoundPage). The shared
-`writingCanvasEnabled` Vite development guard controls route registration and
-desktop/mobile navigation for `/spikes/writing-canvas`. A literal
-`import.meta.env.DEV` also surrounds the lazy import so production emits no
-editor assets. Overview does not load the editor or initialize snapshot storage.
+`writingCanvasEnabled` Vite development guard controls route registration,
+desktop/mobile navigation, and the Overview entry for `/spikes/writing-canvas`.
+The router passes its value to FoundationPage as a presentation prop; pages do
+not import app configuration. A literal
+`import.meta.env.DEV` also surrounds the lazy import and Overview entry markup
+so production emits neither editor assets nor entry copy. Overview does not
+load the editor or initialize snapshot storage.
 
 Proposed future routes, not implemented:
 
@@ -108,13 +111,23 @@ inheriting the page background.
 A ten-shade brand palette places `#004990` at
 primary shade 7. The interface uses `#F8FAFC` background, white surfaces,
 `#0F172A` text, `#64748B` muted text, and `#E2E8F0` borders. Light blue
-`#6BA3D6` is a restrained accent; cyan `#0891B2` is reserved for occasional
-future emphasis. Green `#2E7D32` belongs to Approved; amber to Needs Work, red
+`#6BA3D6` is a restrained accent; `#0072CE` supplies occasional decorative blue.
+Green `#2E7D32` belongs to Approved; amber to Needs Work, red
 to Rejected, and slate to No image submitted. These are static design examples,
 not stored reviews or finalized product tokens. Live ready uses brand blue.
 
-Use system fonts, moderate radii, subtle borders, generous spacing, and minimal
-shadows. Tabler React icons support text; no emojis in any project content.
+`demo.html` is a read-only visual reference and is excluded from formatting; it
+is not an application page, imported asset, or production build input. Its
+deep-blue headings (`#022169`), selective radial gradients, white surfaces with
+soft depth, rounded corners, and compact icon tiles inform the presentation.
+Mantine and the existing CSS-variable resolver remain authoritative. Shared
+colors, surface shadow, and localized background wash live in the resolver;
+page and feature CSS Modules control their placement. Main surfaces use 20 px
+corners, with smaller radii for controls and internal panels. System connection
+stays visually secondary and retains its live announcements and Retry action.
+System fonts remain in use. Full-screen presentation sections, grid textures,
+and reveal animations were not adopted. Product behavior and persistence are
+unchanged. Tabler React icons support text; no emojis in any project content.
 
 Mantine AppShell provides the fixed top header and main region. Desktop has compact
 Overview navigation plus the development-only Writing Canvas Spike item. A labeled mobile control opens a Mantine
@@ -188,8 +201,10 @@ The 920 px white surface uses a 72ch body column, 17 px text, 1.65 line spacing,
 56 px desktop margins, and 20 px narrow margins. The desktop toolbar sits below
 AppShell's actual header-offset variable. Narrow screens wrap controls and disable
 toolbar stickiness. Documents scroll with the page. Feature CSS is scoped, and
-editor package CSS is lazy loaded after Mantine core. The shared theme/resolver
-and the Overview layout remain the foundation.
+editor package CSS is lazy loaded after Mantine core. The surrounding blue wash,
+document shadow, toolbar groups, and quieter test-control panel are presentation
+only. Written body content keeps a plain white background and the same typography
+in editing and read-only views.
 
 One namespaced localStorage key holds `{ format, title, document, savedAt }`.
 There are no product IDs, users, permissions, versions, or backend persistence.

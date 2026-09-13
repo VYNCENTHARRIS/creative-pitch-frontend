@@ -16,6 +16,11 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     '--text': '#0F172A',
     '--muted': '#64748B',
     '--border': '#E2E8F0',
+    '--heading': '#022169',
+    '--border-blue': '#DBE7F2',
+    '--surface-shadow': '0 10px 30px rgba(15, 23, 42, 0.05)',
+    '--workspace-wash':
+      'radial-gradient(ellipse at 84% 14%, rgba(0, 114, 206, 0.10), transparent 55%), radial-gradient(ellipse at 11% 88%, rgba(2, 132, 199, 0.065), transparent 52%), linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 58%, #F3F8FD 100%)',
   },
   light: {
     '--mantine-color-body': '#F8FAFC',
@@ -47,7 +52,7 @@ export const theme = createTheme({
   fontFamily,
   headings: { fontFamily, fontWeight: '650' },
   defaultRadius: 'md',
-  radius: { sm: '6px', md: '10px', lg: '14px' },
+  radius: { sm: '8px', md: '10px', lg: '20px' },
   focusRing: 'auto',
   respectReducedMotion: true,
   components: {

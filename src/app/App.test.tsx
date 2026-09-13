@@ -59,6 +59,10 @@ it('uses the same disabled development guard for navigation and direct route acc
 it('renders the shell and labeled design examples, with an accessible mobile navigation control', async () => {
   renderWithProviders(<App />, '/')
   expect(screen.getByRole('heading', { name: 'Creative Pitch', level: 1 })).toBeVisible()
+  expect(screen.getByRole('link', { name: 'Open writing canvas' })).toHaveAttribute(
+    'href',
+    '/spikes/writing-canvas',
+  )
   expect(
     within(screen.getByRole('navigation', { name: 'Main navigation' })).getByRole('link', {
       name: 'Overview',
@@ -81,4 +85,14 @@ it('handles an unknown route and navigates back to the overview', async () => {
   expect(screen.getByRole('heading', { name: 'Page not found' })).toBeVisible()
   await userEvent.setup().click(screen.getByRole('link', { name: 'Back to overview' }))
   expect(screen.getByRole('heading', { name: 'Creative Pitch', level: 1 })).toBeVisible()
+})
+
+it('omits the Overview canvas destination when the development guard is disabled', () => {
+  environment.writingCanvasEnabled = false
+  const storageRead = vi.spyOn(Storage.prototype, 'getItem')
+  renderWithProviders(<App />, '/')
+  expect(screen.getByRole('heading', { name: 'Creative Pitch', level: 1 })).toBeVisible()
+  expect(screen.queryByRole('link', { name: 'Open writing canvas' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Try the writing canvas' })).not.toBeInTheDocument()
+  expect(storageRead).not.toHaveBeenCalledWith('creative-pitch:writing-canvas-spike:v1')
 })

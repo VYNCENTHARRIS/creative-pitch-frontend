@@ -4,6 +4,12 @@ A workspace for creating, reviewing, and tracking content pitches. This new app
 implements the frontend foundation: a responsive Mantine shell, real backend
 health/readiness checks, and a clearly labeled static Design preview.
 
+Overview leads with a compact workspace introduction and a development-only
+writing-canvas entry. Deep-blue headings, selective blue gradients, and soft
+surface depth follow the read-only `demo.html` visual reference. That file is
+excluded from formatting and is not a production page or asset. Editor behavior,
+API contracts, and browser snapshot persistence are unchanged.
+
 Authentication, product pitches, images, reviews, versions, and the pipeline
 are not implemented. A development-only writing-canvas experiment evaluates
 Mantine + Tiptap with one browser test snapshot. There are no stored product records.
@@ -189,7 +195,8 @@ and only StarterKit supplies undo history. `shouldRerenderOnTransaction` updates
 controls within the writing component. Reload/clone reset its React key instead
 of calling `setContent` on every keystroke. A small Mantine link dialog supplies
 explicit URL errors and accessible controls. Editor styles load with the lazy
-feature after core styles; the shared theme/resolver is unchanged.
+feature after core styles; Mantine and the shared theme/resolver own the visual
+defaults, with page and feature composition in scoped CSS Modules.
 
 Official references: [Mantine integration](https://mantine.dev/x/tiptap/),
 [Tiptap 3 migration](https://mantine.dev/guides/tiptap-3-migration/),
@@ -206,7 +213,7 @@ code were copied.
 
 ### Verification and limits
 
-The foundation and spike have 46 passing Vitest tests, including complete
+The foundation and spike have 47 Vitest tests, including complete
 normalized document comparisons, source-byte immutability, storage failures,
 confirmations, and route guards. Tests use real Tiptap/ProseMirror. Shared setup
 uses jsdom's Storage rather than Node 25's global storage and small font/layout

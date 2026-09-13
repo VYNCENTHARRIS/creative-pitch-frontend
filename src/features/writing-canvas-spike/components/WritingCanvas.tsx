@@ -61,7 +61,7 @@ export function WritingCanvas({ initial, onChange, ref }: WritingCanvasProps) {
       editor={editor}
       withTypographyStyles={false}
       className={classes.paper}
-      classNames={{ control: classes.control }}
+      classNames={{ control: classes.control, controlsGroup: classes.controlsGroup }}
     >
       <RichTextEditor.Toolbar
         sticky

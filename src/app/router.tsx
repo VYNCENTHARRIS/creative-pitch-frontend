@@ -12,7 +12,7 @@ const WritingCanvasSpikePage = import.meta.env.DEV
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<FoundationPage />} />
+      <Route path="/" element={<FoundationPage showWritingCanvas={writingCanvasEnabled} />} />
       {writingCanvasEnabled && WritingCanvasSpikePage && (
         <Route
           path="/spikes/writing-canvas"
