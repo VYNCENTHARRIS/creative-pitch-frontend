@@ -1,8 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, it, vi } from 'vitest'
-import { renderWithProviders } from '../test/render'
-import { App } from './App'
+import { renderApp } from '../test/renderApp'
 
 const environment = vi.hoisted(() => ({ writingCanvasEnabled: true }))
 vi.mock('./development', () => environment)
@@ -26,7 +25,7 @@ beforeEach(() => {
 })
 
 it('opens the development spike from desktop and mobile navigation without requesting the backend', async () => {
-  renderWithProviders(<App />, '/spikes/writing-canvas')
+  renderApp('/spikes/writing-canvas')
   expect(await screen.findByRole('textbox', { name: 'Pitch title' })).toBeVisible()
   expect(fetch).not.toHaveBeenCalled()
   expect(
@@ -48,7 +47,7 @@ it('opens the development spike from desktop and mobile navigation without reque
 it('uses the same disabled development guard for navigation and direct route access', () => {
   environment.writingCanvasEnabled = false
   const storageRead = vi.spyOn(Storage.prototype, 'getItem')
-  renderWithProviders(<App />, '/spikes/writing-canvas')
+  renderApp('/spikes/writing-canvas')
   expect(screen.getByRole('heading', { name: 'Page not found' })).toBeVisible()
   expect(screen.queryByRole('link', { name: /Writing Canvas Spike/ })).not.toBeInTheDocument()
   expect(screen.queryByRole('textbox', { name: 'Pitch body' })).not.toBeInTheDocument()
@@ -57,7 +56,7 @@ it('uses the same disabled development guard for navigation and direct route acc
 })
 
 it('renders the shell and labeled design examples, with an accessible mobile navigation control', async () => {
-  renderWithProviders(<App />, '/')
+  renderApp('/')
   expect(screen.getByRole('heading', { name: 'Creative Pitch', level: 1 })).toBeVisible()
   expect(screen.getByRole('link', { name: 'Open writing canvas' })).toHaveAttribute(
     'href',
@@ -70,7 +69,7 @@ it('renders the shell and labeled design examples, with an accessible mobile nav
   ).toHaveAttribute('aria-current', 'page')
   expect(screen.getByRole('heading', { name: 'Design preview' })).toBeVisible()
   expect(
-    screen.getByText('Static interface examples. No stored pitches or review data.'),
+    screen.getByText('Static interface examples. These are not your Concepts or review data.'),
   ).toBeVisible()
   const user = userEvent.setup()
   await user.click(screen.getByRole('button', { name: 'Open navigation' }))
@@ -81,7 +80,7 @@ it('renders the shell and labeled design examples, with an accessible mobile nav
 })
 
 it('handles an unknown route and navigates back to the overview', async () => {
-  renderWithProviders(<App />, '/unknown')
+  renderApp('/unknown')
   expect(screen.getByRole('heading', { name: 'Page not found' })).toBeVisible()
   await userEvent.setup().click(screen.getByRole('link', { name: 'Back to overview' }))
   expect(screen.getByRole('heading', { name: 'Creative Pitch', level: 1 })).toBeVisible()
@@ -90,7 +89,7 @@ it('handles an unknown route and navigates back to the overview', async () => {
 it('omits the Overview canvas destination when the development guard is disabled', () => {
   environment.writingCanvasEnabled = false
   const storageRead = vi.spyOn(Storage.prototype, 'getItem')
-  renderWithProviders(<App />, '/')
+  renderApp('/')
   expect(screen.getByRole('heading', { name: 'Creative Pitch', level: 1 })).toBeVisible()
   expect(screen.queryByRole('link', { name: 'Open writing canvas' })).not.toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Try the writing canvas' })).not.toBeInTheDocument()

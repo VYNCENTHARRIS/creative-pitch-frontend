@@ -19,14 +19,31 @@ as part of frontend work.
 - The backend owns identity, permissions, workflow, versions, review locks,
   scoring, official results, and pipeline advancement. Display its responses;
   do not reconstruct its product rules in the client.
-- Only infrastructure endpoints exist. Never invent authentication or persisted
-  product behavior. Label static examples as Design preview.
+- Supabase Auth owns browser sessions. FastAPI `/api/v1/me` owns application
+  identity and role. Concepts use only the four verified FastAPI endpoints;
+  Writer and Admin both have owner-only private workspaces. Label static
+  examples as Design preview. Do not invent publishing, versions, or reviews.
 - The development-only Mantine/Tiptap writing-canvas spike may keep one explicit
   browser test snapshot in its feature. This is disposable experiment storage,
   not product persistence; keep its route and navigation out of production.
-- Use the shared fetch client and validated VITE_BACKEND_URL. Vite variables
-  are public. Send no credentials or auth headers until transport is scoped.
-  Preserve structured errors internally; never render raw stack traces or HTML.
+- Use the shared fetch client and the three validated public Vite values:
+  VITE_BACKEND_URL, VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY. Supabase is
+  Auth-only. Product requests use current Bearer tokens only at the trusted
+  backend origin, omit cookies, and refuse redirects. Preserve structured
+  errors internally; never render raw stack traces or HTML.
+- Keep private query keys scoped to identity and session generation. Cancel and
+  remove private queries/mutations on account changes. Late responses must not
+  repopulate another account. Same-account token refresh preserves the editor.
+- First explicit Save Draft creates a Concept; later saves replace its one
+  Working Draft. Keep a detached request snapshot and acknowledge only confirmed
+  writes. Preserve newer typing, undo history, and unsaved work on failures.
+- Validate saved JSON against the actual supported editor schema before editing.
+  Never silently strip unknown data and overwrite the stored document. Use
+  structural comparisons, UTF-8 byte limits, and backend text normalization.
+- One shared navigation guard covers dirty routes and voluntary logout. Retain
+  expired-auth writing only in memory for the same verified account. No autosave,
+  offline private-draft storage, automatic write retry, or invented concurrency
+  protection. Product editor code must not import spike persistence/tooling.
 - Use Mantine directly. Keep the theme small, blue/gray, and readable. Reserve
   semantic colors for status. Use text with icons; never color alone.
 - Support narrow screens, keyboard use, visible focus, labeled controls, and

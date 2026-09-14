@@ -21,6 +21,7 @@ import {
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { SystemStatus } from '../features/system-status'
+import { useAuth } from '../features/auth'
 import classes from './FoundationPage.module.css'
 
 const examples = [
@@ -31,6 +32,7 @@ const examples = [
 ]
 
 export function FoundationPage({ showWritingCanvas }: { showWritingCanvas: boolean }) {
+  const auth = useAuth()
   const [previewMessage, setPreviewMessage] = useState('No product actions are connected.')
   return (
     <Stack gap={28}>
@@ -43,8 +45,16 @@ export function FoundationPage({ showWritingCanvas }: { showWritingCanvas: boole
             Creative Pitch
           </Title>
           <Text c="dimmed" size="lg" lh={1.65} maw={520}>
-            A workspace for creating, reviewing, and tracking content pitches.
+            A private workspace to shape your concepts and keep writing.
           </Text>
+          <Button
+            component={Link}
+            to={auth.status === 'authenticated' ? '/concepts' : '/login'}
+            mt="lg"
+            rightSection={<IconArrowRight size={18} aria-hidden="true" />}
+          >
+            {auth.status === 'authenticated' ? 'My Concepts' : 'Sign in'}
+          </Button>
         </header>
         {import.meta.env.DEV && showWritingCanvas && (
           <section className={classes.destination} aria-labelledby="canvas-entry-title">
@@ -81,7 +91,7 @@ export function FoundationPage({ showWritingCanvas }: { showWritingCanvas: boole
               Design preview
             </Title>
             <Text size="sm" c="dimmed">
-              Static interface examples. No stored pitches or review data.
+              Static interface examples. These are not your Concepts or review data.
             </Text>
           </div>
           <Badge color="gray" variant="outline">
@@ -154,7 +164,7 @@ export function FoundationPage({ showWritingCanvas }: { showWritingCanvas: boole
         </SimpleGrid>
       </section>
       <Text component="footer" size="xs" c="dimmed">
-        Foundation preview · Authentication and pitch workflows are not connected yet.
+        Creative Pitch · Save Draft keeps your current work private.
       </Text>
     </Stack>
   )

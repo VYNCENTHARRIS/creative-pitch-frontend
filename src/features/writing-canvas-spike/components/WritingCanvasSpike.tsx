@@ -2,7 +2,12 @@ import '@mantine/tiptap/styles.css'
 import { Badge, Button, Group, Modal, Stack, Text, Title } from '@mantine/core'
 import { IconCopy, IconEye, IconPencil, IconRefresh, IconTrash } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
-import { emptyDocument, validateDocument } from '../editor'
+import {
+  emptyDocument,
+  validateDocument,
+  WritingCanvas,
+  type WritingCanvasHandle,
+} from '../../concepts'
 import { sample } from '../sample'
 import {
   copySnapshot,
@@ -15,7 +20,6 @@ import {
 import type { WorkingDocument } from '../types'
 import classes from '../WritingCanvas.module.css'
 import { ReadOnlyDocument } from './ReadOnlyDocument'
-import { WritingCanvas, type WritingCanvasHandle } from './WritingCanvas'
 
 interface Confirmation {
   title: string
@@ -190,6 +194,8 @@ export function WritingCanvasSpike() {
       </Text>
       <div hidden={showingPreview}>
         <WritingCanvas
+          titleLabel="Pitch title"
+          bodyLabel="Pitch body"
           key={working.generation}
           ref={canvas}
           initial={working.initial}

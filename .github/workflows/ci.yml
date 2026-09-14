@@ -13,6 +13,8 @@ jobs:
     timeout-minutes: 10
     env:
       VITE_BACKEND_URL: http://localhost:7084
+      VITE_SUPABASE_URL: https://auth.example.test
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_fabricated_ci_configuration
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5

@@ -30,10 +30,16 @@ if [ ! -x node_modules/.bin/vite ] || ! npm ls --depth=0 >/dev/null 2>&1; then
   exit 1
 fi
 
-if [ ! -f .env ] && [ ! -f .env.local ] && [ -z "${VITE_BACKEND_URL:-}" ]; then
-  echo 'Backend configuration is missing. Run: cp .env.example .env' >&2
-  exit 1
-fi
+node --input-type=module <<'JS'
+import { loadEnv } from 'vite'
+const required = ['VITE_BACKEND_URL', 'VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY']
+const publicConfig = loadEnv('development', process.cwd(), required)
+const missing = required.filter((name) => !publicConfig[name]?.trim())
+if (missing.length) {
+  console.error(`Missing public configuration: ${missing.join(', ')}. See .env.example; do not overwrite an existing .env.`)
+  process.exit(1)
+}
+JS
 
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-3000}"

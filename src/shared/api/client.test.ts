@@ -98,4 +98,43 @@ describe('HTTP client', () => {
     await vi.advanceTimersByTimeAsync(50)
     await result
   })
+
+  it('sends complete POST and PUT JSON with current tokens and refuses redirects', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => Response.json({ ok: true }))
+    vi.stubGlobal('fetch', fetchMock)
+    let token = 'fabricated-first'
+    const access = { token: () => token, assertCurrent: () => undefined }
+    await client.post('/api/v1/concepts', { title: '' }, access)
+    token = 'fabricated-refreshed'
+    await client.put('/api/v1/concepts/test/draft', { title: 'Updated' }, access)
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'omit',
+        redirect: 'error',
+        body: JSON.stringify({ title: 'Updated' }),
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer fabricated-refreshed',
+        },
+      }),
+    )
+  })
+
+  it.each([
+    'https://outside.test',
+    '//outside.test',
+    '/\\outside.test',
+    '/../outside',
+    '/path?token=private',
+  ])('refuses untrusted request path %s', async (path) => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(
+      client.get(path, undefined, { token: () => 'fabricated', assertCurrent: () => undefined }),
+    ).rejects.toThrow()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })

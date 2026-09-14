@@ -1,8 +1,8 @@
 import { Link } from '@mantine/tiptap'
-import { Extension, getSchema, type JSONContent } from '@tiptap/core'
+import { getSchema, type JSONContent } from '@tiptap/core'
 import Placeholder from '@tiptap/extension-placeholder'
-import { Plugin } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
+import { isRecord } from '../../../shared/lib/isRecord'
 
 export function isSafeLink(value: unknown): value is string {
   if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return false
@@ -76,17 +76,37 @@ export function documentExtensions() {
   ]
 }
 
-// Non-editable views also reject document-changing commands and keyboard shortcuts.
-export const ReadOnlyGuard = Extension.create({
-  name: 'snapshotReadOnly',
-  addProseMirrorPlugins() {
-    return [new Plugin({ filterTransaction: (transaction) => !transaction.docChanged })]
-  },
-})
-
 const schema = getSchema(documentExtensions())
 
 export function validateDocument(value: unknown): JSONContent {
+  function checkKeys(item: unknown, mark = false) {
+    if (!isRecord(item) || typeof item.type !== 'string') throw new Error('Unsupported document')
+    const type = mark ? schema.marks[item.type] : schema.nodes[item.type]
+    if (!type) throw new Error('Unsupported document type')
+    const allowed = mark ? ['type', 'attrs'] : ['type', 'attrs', 'content', 'marks', 'text']
+    if (Object.keys(item).some((key) => !allowed.includes(key)))
+      throw new Error('Unsupported document fields')
+    if (
+      item.attrs !== undefined &&
+      (!isRecord(item.attrs) ||
+        Object.keys(item.attrs).some((key) => !Object.hasOwn(type.spec.attrs ?? {}, key)))
+    )
+      throw new Error('Unsupported attributes')
+    if (
+      !mark &&
+      ((item.type !== 'text' && 'text' in item) || (item.type === 'text' && 'content' in item))
+    )
+      throw new Error('Unsupported text fields')
+    if (item.content !== undefined) {
+      if (!Array.isArray(item.content)) throw new Error('Unsupported content')
+      item.content.forEach((child) => checkKeys(child))
+    }
+    if (item.marks !== undefined) {
+      if (!Array.isArray(item.marks)) throw new Error('Unsupported marks')
+      item.marks.forEach((child) => checkKeys(child, true))
+    }
+  }
+  checkKeys(value)
   const node = schema.nodeFromJSON(value)
   node.check()
   if (node.type !== schema.topNodeType) throw new Error('Expected a document')
@@ -105,6 +125,18 @@ export function validateDocument(value: unknown): JSONContent {
     }
   })
   return node.toJSON() as JSONContent
+}
+
+export function editableDocument(value: unknown): JSONContent {
+  // The backend also accepts an empty root. Give that document a place to type.
+  if (
+    isRecord(value) &&
+    value.type === 'doc' &&
+    Object.keys(value).every((key) => key === 'type' || key === 'content') &&
+    (value.content === undefined || (Array.isArray(value.content) && value.content.length === 0))
+  )
+    return emptyDocument()
+  return validateDocument(value)
 }
 
 export function emptyDocument(): JSONContent {

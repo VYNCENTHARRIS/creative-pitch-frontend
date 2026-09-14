@@ -1,242 +1,229 @@
 # Frontend architecture
 
-## Scope and references
+## Implemented scope and authority
 
-Creative Pitch is a clean frontend application. The Leadership Dashboard is a
-read-only engineering reference, not the base app. Its strict TypeScript and
-simple formatting/fetch organization informed this foundation. Its MUI theme,
-charts, Scorecard models, contexts, navigation, and stored-user authentication
-are not carried over. Mantine is the primary UI system for a lighter workspace.
+Creative Pitch implements Supabase sign-in, backend-confirmed application access,
+My Concepts, and one private Working Draft per Concept. A Concept is the long-lived
+container; a Working Draft is its mutable unpublished document. Repeated saves
+never create a Pitch Version or display a version counter.
 
-Only the backend infrastructure endpoints exist. FoundationPage and its local
-Design preview establish the shell without pretending product APIs exist.
-Deployment is not configured.
+The backend [product contract](../../creative-pitch-backend/docs/product-contract.md)
+and actual schemas/routes remain authoritative. Writer and Admin both have
+owner-only private workspace access. Backend ownership checks, profile status,
+roles, and future workflow rules are not reconstructed in the client.
+The Leadership Dashboard repository and `demo.html` are read-only references.
 
-## Layers and imports
+## Layers
 
-This is feature-based organization inspired by Feature-Sliced Design, not a
-claim of full FSD compliance.
+- `app`: stable providers, React Router data router, access boundary, shell, theme,
+  account menu, and global styles.
+- `pages`: compose Overview, LoginPage, MyConceptsPage, and ConceptEditorPage.
+- `features/auth`: SDK session integration, current-user query, safe login/access
+  states, return-route validation, and public exports.
+- `features/concepts`: API shapes, query keys, list presentation, working buffer,
+  save behavior, document validation, and the production editor.
+- `features/writing-canvas-spike`: dev-only sample, snapshot storage, read-only
+  snapshot presentation, JSON inspector, and experiment controls.
+- `features/system-status`: independent infrastructure requests and presentation.
+- `shared`: generic HTTP/errors, public configuration, structural JSON helpers,
+  and the generic navigation confirmation.
+- `test`: shared providers and fabricated Auth fixtures. Behavior tests stay
+  beside their implementation; each render creates a fresh QueryClient.
 
-- `app`: provider composition, router, theme, shell, and global styles.
-- `pages`: compose features and generic UI; avoid domain behavior.
-- `features/system-status`: owns infrastructure API contracts, queries,
-  presentation, and nearby behavior tests.
-- `features/writing-canvas-spike`: development-only editor, synthetic sample,
-  browser snapshot operations, read-only rendering, and nearby tests.
-- `shared/api`: fetch transport and structured errors.
-- `shared/config`: early public environment validation.
-- `shared/lib`: genuinely generic helpers used by multiple layers.
-- `test`: shared setup/render helpers only. Tests live beside behavior.
+Imports flow app → pages → features → shared. Features expose their public index
+to other layers. Cross-feature dependencies are one-way: spike → Concepts → Auth.
+Auth imports neither Concepts nor the app. Shared transport accepts a small
+request-access interface and never imports an Auth React hook.
 
-Imports flow app → pages → features → shared. Pages and app consume features
-through their public index. Features do not import app or pages. Shared does not
-import higher layers or contain future Pitch/Review/PipelineStage types. Add
-shared UI helpers only when they provide real value; use Mantine directly.
+## Session and application access
 
-## State and routing
+One lazy, stable Supabase browser client uses supported SDK persistence and token
+refresh. Only Auth is used; there are no Supabase table/RPC/Data API operations.
+No second token storage or private-document recovery storage exists.
 
-One stable QueryClient is created in the application provider. TanStack Query
-owns backend state. Small UI state stays local; later browsing filters may use
-URL search parameters. There is no Redux or duplicate server-state context.
-Each test render creates a fresh QueryClient.
+`SessionController` publishes an external session snapshot consumed with
+useSyncExternalStore. Its auth callback only updates session state synchronously.
+Queries and cache cleanup run outside that callback. Subscription cleanup handles
+StrictMode; a later auth event wins over an older initial getSession result.
+An account epoch changes on identity replacement or confirmed explicit logout,
+but does not change for same-account refresh events.
 
-React Router uses declarative BrowserRouter/Routes/Route imports from
-`react-router`. This is an ordinary SPA, with no framework/SSR stack.
-Production routes are `/` (FoundationPage) and `*` (NotFoundPage). The shared
-`writingCanvasEnabled` Vite development guard controls route registration,
-desktop/mobile navigation, and the Overview entry for `/spikes/writing-canvas`.
-The router passes its value to FoundationPage as a presentation prop; pages do
-not import app configuration. A literal
-`import.meta.env.DEV` also surrounds the lazy import and Overview entry markup
-so production emits neither editor assets nor entry copy. Overview does not
-load the editor or initialize snapshot storage.
+`AuthProvider` owns the current-user query, not a copied profile record. The SDK
+session permits requesting `GET /api/v1/me`; only a valid response with the same
+UUID permits entering private routes. The backend supplies display name and
+Writer/Admin role. Client metadata supplies neither role nor access.
 
-Proposed future routes, not implemented:
+Explicit access states are checking session, signed out, checking application
+access, authenticated, access denied, unavailable, and reauthentication required.
+Temporary Auth/backend outages are separate from bad credentials and missing or
+inactive profiles. Safe invalid-credential feedback does not enumerate accounts.
 
-- `/login`: real sign-in after authentication is selected.
-- `/pitches`: browse submitted pitches, with future URL-visible filters.
-- `/pitches/new`: create a pitch after product APIs exist.
-- `/pitches/:id`: detail, with backend-authorized visibility.
-- `/admin/reviews`: the authorized review queue.
+The login form validates email shape and nonempty password, leaves password text
+unaltered, blocks duplicate submissions, and uses email/current-password
+autocomplete. There are no account creation or recovery workflows. Recovery login
+uses the same account; deliberate account switching requires confirmed sign-out.
 
-Future authentication integration owns session transport. Unsaved editor state
-belongs to the future editor/form integration. A form strategy is not selected.
+Logout passes `scope: 'local'`, checks the SDK session afterward, and reports
+failures. It does not clear unrelated browser storage or claim immediate JWT
+revocation. An already-issued token can remain valid until backend expiry.
 
-## API boundary and connection state
+## HTTP and cache isolation
 
-VITE_BACKEND_URL is required public configuration, normally
-`http://localhost:7084`. The browser calls it directly, without a Vite proxy.
-The backend must allow the frontend origin through CORS. `/health`, `/ready`,
-and `/api/v1/info` are the only requests. No credentials or auth headers are sent.
+The three required public configuration values are VITE_BACKEND_URL,
+VITE_SUPABASE_URL, and VITE_SUPABASE_PUBLISHABLE_KEY. Validation never echoes
+rejected values. The launcher checks presence through Vite's environment loader
+without sourcing shell text. Production values are baked into the bundle.
 
-Environment validation rejects invalid HTTP(S) addresses, credentials, query
-parameters, fragments, whitespace, and backslashes. Only one trailing slash is
-removed; other URL text is preserved. Invalid configuration produces a clear
-developer-facing error without echoing the supplied value.
+The generic fetch client supports GET, POST JSON, and PUT JSON. It obtains the
+current bearer token immediately before each protected request. Fixed relative
+paths are restricted to the configured backend; redirects are refused, cookies
+are omitted, and HTTP caching is disabled. Caller cancellation and the six-second
+timeout cover fetch/body reading. Supabase HTTP requests have a twelve-second
+per-request bound through the SDK's supported custom fetch option.
 
-Feature API functions use the shared fetch client. ApiError retains HTTP status,
-backend code, and backend message. Non-JSON/network errors get safe summaries.
-The client supports caller cancellation and a six-second timeout, including body
-reading. Response shapes are validated before they become status data.
+ApiError preserves status, backend code, and internal message. Product UI uses
+safe status/code mappings; it does not render arbitrary backend messages, raw
+HTML, SQL, or stack traces. Feature API functions validate response shapes.
 
-Status queries have explicit keys under `system-status`, no automatic retries,
-no polling, a one-minute stale window, and no focus/reconnect refetch. Network
-mode `always` ensures a manual retry attempts the local API even when the browser
-reports no internet connection. Retry refetches all three endpoints.
+Private query keys are:
 
-The UI derives infrastructure presentation from endpoint outcomes:
+- `['current-user', userId, epoch]`
+- `['concepts', userId, 'mine', epoch]`
+- `['concepts', userId, 'detail', conceptId, epoch]`
 
-- Pending health/readiness: checking.
-- Failed or invalid health: API unavailable.
-- Valid health plus `database_unavailable`: API connected, database unavailable.
-- Valid health plus another readiness failure: readiness unconfirmed.
-- Valid health and readiness: ready.
+No token appears in a key. Query metadata marks private records and their owner/
+epoch. Session loss, account replacement, and confirmed logout cancel and remove
+applicable private queries and mutation-cache entries. The shared request access
+object checks the captured identity/epoch before sending and after reading.
+Editor callbacks also check identity and mount lifetime before applying results.
+A late account-A result cannot populate account B. No previous-user placeholder
+data or persisted Query cache is used.
 
-Application information is independent: its failure does not claim the database
-is down. Display only the expected app name and allowlisted public environment
-labels. Never render backend error bodies verbatim; the known database-unavailable
-code maps to its safe public message. Unknown errors never reveal paths, stack
-traces, credentials, or raw HTML. Query data is a point-in-time check, not a
-continuous health monitor.
+Queries own fetched records; the editor owns only its working copy. Current
+documents request fresh data on reopening and disable focus/reconnect refetch.
+An initialized editor does not absorb query refreshes. Mutations have no retries,
+no offline queue, and networkMode always, so a write is not silently replayed
+when connectivity returns. Summary invalidation is independent of write success.
 
-## Theme, shell, and accessibility
+## Backend contract
 
-Mantine core CSS, MantineProvider, and the documented PostCSS preset/simple-vars
-setup provide the foundation. The shared `cssVariablesResolver` in `app/theme.ts`
-sets body, text, muted text, and default control colors through Mantine's supported
-API; do not override these scheme variables with competing `:root` rules.
-Application and test providers use the same resolver.
-Paper, the shell header, and drawer surfaces explicitly stay white instead of
-inheriting the page background.
-A ten-shade brand palette places `#004990` at
-primary shade 7. The interface uses `#F8FAFC` background, white surfaces,
-`#0F172A` text, `#64748B` muted text, and `#E2E8F0` borders. Light blue
-`#6BA3D6` is a restrained accent; `#0072CE` supplies occasional decorative blue.
-Green `#2E7D32` belongs to Approved; amber to Needs Work, red
-to Rejected, and slate to No image submitted. These are static design examples,
-not stored reviews or finalized product tokens. Live ready uses brand blue.
+`GET /api/v1/me` returns `{id, email, display_name, role}`.
+The Concept endpoints are exactly:
 
-`demo.html` is a read-only visual reference and is excluded from formatting; it
-is not an application page, imported asset, or production build input. Its
-deep-blue headings (`#022169`), selective radial gradients, white surfaces with
-soft depth, rounded corners, and compact icon tiles inform the presentation.
-Mantine and the existing CSS-variable resolver remain authoritative. Shared
-colors, surface shadow, and localized background wash live in the resolver;
-page and feature CSS Modules control their placement. Main surfaces use 20 px
-corners, with smaller radii for controls and internal panels. System connection
-stays visually secondary and retains its live announcements and Retry action.
-System fonts remain in use. Full-screen presentation sections, grid textures,
-and reveal animations were not adopted. Product behavior and persistence are
-unchanged. Tabler React icons support text; no emojis in any project content.
+| Method and route                | Response                           |
+| ------------------------------- | ---------------------------------- |
+| POST /api/v1/concepts           | 201 Concept detail                 |
+| GET /api/v1/concepts/mine       | 200 summary array, server ordering |
+| GET /api/v1/concepts/{id}       | 200 owned Concept detail           |
+| PUT /api/v1/concepts/{id}/draft | 200 replaced Working Draft detail  |
 
-Mantine AppShell provides the fixed top header and main region. Desktop has compact
-Overview navigation plus the development-only Writing Canvas Spike item. A labeled mobile control opens a Mantine
-Drawer with focus management, Escape dismissal, and a close control. Content
-stacks through Mantine responsive props. Preserve visible keyboard focus,
-semantic headings/controls, a skip link, readable text, and usable touch targets.
-Connection changes are announced through a live status region. Verify desktop
-and narrow layouts in a real browser when tooling allows; jsdom is not visual QA.
+POST and PUT send the complete `{title, category, written_content}` representation.
+No ownership, role, timestamps, status, version, or snapshot-envelope fields are
+sent. Detail contains `id`, `created_at`, and `draft` with editable fields plus
+`created_at`/`updated_at`. Summary contains `id`, `title`, `category`,
+`created_at`, and `draft_updated_at`. Lists do not request each body or re-sort.
 
-## Tests and checks
+Title is trimmed and permits blank text up to 200 Unicode code points. Optional
+category is trimmed to null when blank, with an 80-character maximum. Text
+normalization matches Python str.strip, including differences from JavaScript
+trim. Documents have a type=doc object root, optional content array, and a
+256 KiB compact UTF-8 JSON limit. NUL and unpaired surrogates are rejected safely.
+An empty document remains a valid incomplete draft.
 
-Vitest/jsdom plus React Testing Library, jest-dom, and user-event exercise
-observable behavior. Mock fetch directly for controlled connection failures.
-Do not create a fake backend server or add MSW for this small foundation.
-Tests cover routing, navigation, preview labeling, connection states, retry,
-public info, structured errors, cancellation, timeouts, and URL validation.
-Avoid assertions about Mantine-generated classes or internal hook calls.
+401 requires reauthentication; 403 denies application access; 404 means Concept
+unavailable without ownership speculation; 422 reports validation failure; 503
+and network failures report unavailable service. Malformed success responses do
+not manufacture empty records. No revision field, stale-save 409, or conditional
+write endpoint exists.
 
-Strict TypeScript, ESLint recommended React/TypeScript/Query rules, Prettier,
-tests, and production build run locally and in CI. Exact direct dependencies and
-npm's lockfile make installs reproducible. CI selects Node 24 LTS and uses only
-a safe fabricated backend URL; no backend service or secrets are required.
+## Working buffer and navigation
 
-## Synchronized product assumptions
+`DraftBuffer` holds the working fields, last-confirmed baseline, Concept ID,
+server timestamp, validation/save error, and in-flight state. Opening New Concept
+only initializes memory. The first explicit Save Draft captures a detached,
+normalized request and sends POST. A synchronous guard prevents overlapping
+writes, including duplicate clicks. The response is checked against the sent
+representation before acknowledgement.
 
-The backend business product contract remains the primary source of truth.
-These frontend visibility assumptions summarize the confirmed contract; this
-document is not a second full business contract. None are implemented yet.
+On success the baseline and server cache advance. The current writing does not
+get replaced; newer typing and undo history survive. First-save navigation uses
+replacement history and preserves the original editor entry key. Subsequent saves
+PUT that returned ID. Reopening a different route creates a fresh editor.
 
-Shared writer views may eventually receive title, the full submitted pitch,
-optional image, category, and general status. Other writers must not receive
-writer identity, private review comments, detailed scores, or private version
-history. Owner/admin private views may receive relevant feedback, detailed
-scores, and version history. Visibility must be enforced by backend responses,
-not by hiding already-received private fields in the UI.
+Feedback is persistent: Not saved yet, Unsaved changes, Saving, Saved, Save failed.
+The last-confirmed timestamp is separate. Failed writes retain all working fields.
+An ambiguous POST failure explains possible creation and opens My Concepts in a
+new tab so the working copy stays available;
+another POST requires a duplicate-risk confirmation. There is no exactly-once
+guarantee and no attempt to infer identity by matching titles.
 
-The backend owns verified identity, roles, authorization, immutable published
-versions, Make Live meaning submit for review, review locks with one active
-owner, at most one completed official result per published version, optional
-visual scoring, red/yellow/green official results, and pipeline advancement.
-The working post-approval stages are Writer's Room, Creative Review, VP Pitch,
-and Final Creator Pitch. The frontend displays state and sends authorized
-actions; it must not recreate workflow/scoring/permissions as a second engine.
+One generic NavigationGuard wraps the data-router shell. The active editor
+registers its dirty/in-flight check. useBlocker covers links and Back/Forward;
+the same Mantine confirmation handles voluntary logout. First-save URL replacement
+has one exact internal exception. A beforeunload listener is mounted only while
+needed. Keep editing preserves the route/buffer; Leave without saving discards
+the memory copy. A request already received by the backend may still commit.
 
-## Writing-canvas spike and future boundary
+RequireAccess retains only an already-admitted editor at the same location and
+identity epoch during auth loss. A 401 disables saving and offers inline
+reauthentication without a redirect that destroys writing. The same verified user
+can recover the in-memory buffer. Explicit logout or identity replacement unmounts
+it; no other account receives it. New private pages remain protected during
+restoration, profile checks, and recovery.
 
-`pages/WritingCanvasSpikePage` only composes the feature's public index.
-The feature owns its editor configuration, writing wrapper, read-only renderer,
-link dialog, synthetic sample, and snapshot controls. It imports no app/pages
-or product API code. See the [README](../README.md#writing-canvas-development-spike)
-for startup, exact package versions, action semantics, and official references.
+This protects one tab's unsaved work. It is not optimistic concurrency:
+two tabs may overwrite the same Working Draft. No autosave, private local storage,
+offline recovery, publishing, version history, uploads, deletion, review, or
+pipeline implementation is included.
 
-Mantine supplies controls and document framing; Tiptap owns body content,
-selection, and undo history. Title state stays inside the writing wrapper.
-The parent holds snapshot metadata and action state, and reads title plus
-`editor.getJSON()` only for explicit actions through a small component ref.
-It does not duplicate a live document in context or TanStack Query. Transaction
-rerenders remain inside the editor component. Preview keeps writing mounted;
-reload, clone, sample loading, and clearing replace the editor's key for a fresh
-instance and clean undo history. Undo is not product version history.
+## Editor, styling, and production
 
-Editable and read-only instances use the same supported document extensions:
-paragraphs, H1–H3, bold, italic, lists, hard breaks, and safe HTTP(S) links.
-StarterKit's Link, underline, strike, code, code blocks, blockquotes, and horizontal
-rules are disabled. Mantine's Link replaces StarterKit's Link; there is only one
-undo implementation. The read-only instance is non-editable and also rejects
-document-changing transactions, including keyboard formatting commands.
-New-tab link attributes are constrained to safe targets and rel protection.
+The Concepts editor owns the extracted extension configuration, safe-link dialog,
+writing component, and document CSS. The spike consumes these through public
+exports and keeps its snapshot envelope/key/controls isolated. Its read-only
+snapshot renderer remains dev-only because the product does not need it.
 
-The 920 px white surface uses a 72ch body column, 17 px text, 1.65 line spacing,
-56 px desktop margins, and 20 px narrow margins. The desktop toolbar sits below
-AppShell's actual header-offset variable. Narrow screens wrap controls and disable
-toolbar stickiness. Documents scroll with the page. Feature CSS is scoped, and
-editor package CSS is lazy loaded after Mantine core. The surrounding blue wash,
-document shadow, toolbar groups, and quieter test-control panel are presentation
-only. Written body content keeps a plain white background and the same typography
-in editing and read-only views.
+Supported structures remain paragraph, H1–H3, bold, italic, bullet/ordered lists,
+hard breaks, and safe HTTP(S) links with protected new-tab attributes. StarterKit
+provides the only undo history. Unknown JSON fields/attributes are rejected before
+ProseMirror nodeFromJSON/check; schema loading cannot silently discard opaque
+backend content. Empty roots receive a blank paragraph for editing, with equivalent
+dirty comparison. Structural comparison ignores JSONB property order.
+Incompatible stored content stays untouched and cannot be saved by this editor.
 
-One namespaced localStorage key holds `{ format, title, document, savedAt }`.
-There are no product IDs, users, permissions, versions, or backend persistence.
-Serialization and cloning detach stored/source content from working content.
-Snapshot reads parse the envelope, run ProseMirror `nodeFromJSON` and `check`,
-and constrain heading/list values that the base schemas leave open. Link
-attribute validation is part of the shared extension. Invalid stored documents
-remain stored rather than being silently stripped on reload. Ordinary paste
-uses the supported editor schema to retain available text and formatting.
-This is prototype input handling, not future server validation.
+There is one prominent editable title, an optional free-text category, and the
+existing toolbar/document. Tiptap is not reset by save feedback or query updates.
+Product Save Draft is separate from formatting. The product action bar stays
+below the fixed shell header; the product toolbar is static to avoid overlapping
+sticky layers. The spike retains its original desktop sticky toolbar.
 
-Save, reload, clone, clear, replacement, and deletion are explicit actions with
-local Mantine confirmations where content could be lost. JSON is rendered as
-escaped text, and preview renders through Tiptap. No arbitrary JSON/HTML import,
-`dangerouslySetInnerHTML`, autosave, global navigation guard, or storage-wide clear
-is used. Storage is specific to a browser profile and origin; localhost ports
-and hostname variants do not share snapshots. Storage errors are visible without
-announcing success. Cross-tab storage events refresh the displayed snapshot;
-replacement/deletion recheck the captured value before writing.
+Mantine, system fonts, the small blue/gray theme, deep-blue headings, pale
+surroundings, white paper, and soft depth follow the approved reference. The
+document retains its comfortable line length and responsive wrapping toolbar.
+Status has text; controls have labels and visible keyboard focus.
 
-The wrapper, constrained extension configuration, typography, and read-only
-renderer are candidates for a later real editor integration after evaluation.
-The sample, snapshot envelope/key, localStorage helpers, test controls, and
-spike-only routing are deliberately disposable. The production schema,
-authentication, real draft persistence, immutable published versions, review
-workflow, and image input remain undecided or unimplemented. No second editor
-was installed or compared.
+React Router uses createBrowserRouter/RouterProvider only for SPA navigation
+blocking. No loaders, SSR, or framework mode were added. Production supports
+Overview, login, Concepts, editor, and not-found routes. The literal Vite DEV
+guard removes the lazy spike route and its storage/tooling/sample. The production
+editor is now expected in the bundle. demo.html is excluded from build input.
 
-Local verification covers complete normalized JSON round trips, read-only
-protection, detached-copy immutability, corrupted/unavailable storage, control
-names, confirmations, and development route guards. Real Chrome checks cover
-desktop/narrow writing, selection, formatting, paste, links, reload after refresh,
-focus, scrolling, and production exclusion. jsdom's minimal font/layout stubs do
-not verify browser geometry; physical mobile keyboards and touch selection remain
-unverified. Suitability is provisional until Vyncent tries the writing experience.
+## Verification boundary
+
+Run the commands in README: lint, format:check, typecheck, test, build, bash syntax,
+and git diff --check. Vitest uses fabricated configuration, mocked Auth/network
+boundaries, and real Tiptap integration. Each app render has a fresh QueryClient.
+Tests cover save races, schema safety, identity isolation, access failures,
+navigation, and recovery. They do not prove hosted ownership enforcement.
+
+Isolated Chrome tests cover desktop/narrow rendering and synthetic end-to-end
+flows. Screenshots live in ignored .verification/product-slice. Physical phone
+keyboards and touch selection are unverified. Native Chrome control reported
+missing Computer Use permission, so real Supabase login and hosted Concept
+acceptance await private user credential entry. Backend files, schema, users,
+profiles, and the reference repositories remain outside this frontend change.
+
+The temporary live backend returned readiness 503 `database_unavailable`.
+Health/info returned 200; intentionally invalid-token GET/POST/PUT requests were
+rejected with 401 after successful browser-generated 200 CORS preflights.
+No real Concept was created, and hosted connectivity was not changed or investigated.

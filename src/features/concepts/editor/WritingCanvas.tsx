@@ -1,3 +1,4 @@
+import '@mantine/tiptap/styles.css'
 import { NativeSelect, Textarea } from '@mantine/core'
 import { RichTextEditor } from '@mantine/tiptap'
 import {
@@ -10,10 +11,10 @@ import {
   IconUnlink,
 } from '@tabler/icons-react'
 import { useEditor } from '@tiptap/react'
-import { useImperativeHandle, useState, type Ref } from 'react'
-import { documentExtensions } from '../editor'
-import type { WorkingDocument } from '../types'
-import classes from '../WritingCanvas.module.css'
+import { useImperativeHandle, useState, type Ref, type ReactNode } from 'react'
+import { documentExtensions } from './schema'
+import type { WorkingDocument } from './types'
+import classes from './WritingCanvas.module.css'
 import { LinkControl } from './LinkControl'
 
 export interface WritingCanvasHandle {
@@ -22,20 +23,32 @@ export interface WritingCanvasHandle {
 
 interface WritingCanvasProps {
   initial: WorkingDocument
-  onChange: () => void
+  onChange: (next: WorkingDocument) => void
   ref: Ref<WritingCanvasHandle>
+  titleError?: string
+  children?: ReactNode
+  titleLabel?: string
+  bodyLabel?: string
 }
 
-export function WritingCanvas({ initial, onChange, ref }: WritingCanvasProps) {
+export function WritingCanvas({
+  initial,
+  onChange,
+  ref,
+  titleError,
+  children,
+  titleLabel = 'Concept title',
+  bodyLabel = 'Written document',
+}: WritingCanvasProps) {
   const [title, setTitle] = useState(initial.title)
   const editor = useEditor({
     extensions: documentExtensions(),
     content: initial.document,
     enableContentCheck: true,
     shouldRerenderOnTransaction: true,
-    onUpdate: onChange,
+    onUpdate: ({ editor }) => onChange({ title, document: editor.getJSON() }),
     editorProps: {
-      attributes: { role: 'textbox', 'aria-label': 'Pitch body', 'aria-multiline': 'true' },
+      attributes: { role: 'textbox', 'aria-label': bodyLabel, 'aria-multiline': 'true' },
       handleDOMEvents: {
         click: (_view, event) => {
           if (event.target instanceof Element && event.target.closest('a')) {
@@ -110,18 +123,23 @@ export function WritingCanvas({ initial, onChange, ref }: WritingCanvasProps) {
       </RichTextEditor.Toolbar>
       <div className={classes.document}>
         <Textarea
-          aria-label="Pitch title"
-          placeholder="Untitled pitch"
+          aria-label={titleLabel}
+          placeholder="Untitled concept"
+          error={titleError}
           value={title}
           onChange={(event) => {
             setTitle(event.currentTarget.value)
-            onChange()
+            onChange({
+              title: event.currentTarget.value,
+              document: editor?.getJSON() ?? initial.document,
+            })
           }}
           autosize
           minRows={1}
           variant="unstyled"
           classNames={{ input: classes.titleInput }}
         />
+        {children}
         <RichTextEditor.Content className={classes.body} />
       </div>
     </RichTextEditor>

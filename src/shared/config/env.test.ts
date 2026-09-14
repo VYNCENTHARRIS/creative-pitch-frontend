@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseBackendUrl } from './env'
+import { parseBackendUrl, parsePublishableKey, parseSupabaseUrl } from './env'
 
 describe('backend configuration', () => {
   it('accepts HTTP(S) and removes only one trailing slash', () => {
@@ -26,4 +26,19 @@ describe('backend configuration', () => {
       expect(() => parseBackendUrl(value)).not.toThrow('private')
     }
   })
+})
+
+it('requires a public Supabase origin and publishable key without echoing rejected values', () => {
+  expect(parseSupabaseUrl('https://auth.example.test/')).toBe('https://auth.example.test')
+  expect(parsePublishableKey('sb_publishable_fabricated')).toBe('sb_publishable_fabricated')
+  for (const value of [
+    '',
+    undefined,
+    'http://auth.example.test',
+    'https://auth.example.test/path',
+    'https://user:private@auth.example.test',
+  ])
+    expect(() => parseSupabaseUrl(value)).toThrow('Set VITE_SUPABASE_URL')
+  for (const value of ['', undefined, 'sb_secret_private', 'private.jwt.token'])
+    expect(() => parsePublishableKey(value)).toThrow('public Supabase publishable key')
 })

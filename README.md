@@ -1,48 +1,41 @@
 # Creative Pitch frontend
 
-A workspace for creating, reviewing, and tracking content pitches. This new app
-implements the frontend foundation: a responsive Mantine shell, real backend
-health/readiness checks, and a clearly labeled static Design preview.
+Creative Pitch connects real Supabase email/password sign-in to a private
+FastAPI workspace: My Concepts, New Concept, and one mutable Working Draft per
+Concept. The approved Mantine + Tiptap canvas supplies the writing experience.
+Save Draft keeps work private; it does not submit anything for review.
 
-Overview leads with a compact workspace introduction and a development-only
-writing-canvas entry. Deep-blue headings, selective blue gradients, and soft
-surface depth follow the read-only `demo.html` visual reference. That file is
-excluded from formatting and is not a production page or asset. Editor behavior,
-API contracts, and browser snapshot persistence are unchanged.
+## Stack and setup
 
-Authentication, product pitches, images, reviews, versions, and the pipeline
-are not implemented. A development-only writing-canvas experiment evaluates
-Mantine + Tiptap with one browser test snapshot. There are no stored product records.
+React 19, strict TypeScript 6, Vite 8, Mantine 9.6.1, Tabler icons, React Router
+8.3.1, TanStack Query 5, and Tiptap 3.31.3 remain pinned. Supabase JS 2.116.0 is
+the only added direct dependency. npm generates the lockfile.
 
-## Stack and runtime
-
-React 19, TypeScript 6, Vite 8, Mantine 9 (core/hooks), Tabler React icons,
-React Router 8 in declarative SPA mode, and TanStack Query 5. Tests use Vitest 4,
-jsdom 27, React Testing Library, jest-dom, and user-event. ESLint includes React,
-TypeScript, and TanStack Query rules; Prettier handles formatting.
-
-Use Node 24 LTS, at least 24.15, with npm 11 or newer. `.nvmrc` and CI select
-24.21.0; no version manager is required. Newer dependency-compatible Node versions
-can run locally. Direct packages are pinned; npm owns `package-lock.json`.
-TypeScript 6 stays within typescript-eslint's supported range. Vitest 4 and
-jsdom 27 also support the existing local Node 25 runtime; their newest majors do
-not. Node 25 is not the supported project baseline.
-
-## One-time setup
-
-With Node and npm already installed:
+Use Node 24 LTS, at least 24.15, and npm 11 or newer. CI and `.nvmrc` select
+24.21.0. Local verification also works with the installed Node 25.2.1 runtime.
 
 ```bash
 cd /Users/5177394/creative-pitch-frontend
 npm ci
-cp .env.example .env
 ```
 
-Do not overwrite an existing `.env` when repeating setup.
+For a first setup only, copy `.env.example` to `.env`, then provide the approved
+public configuration. Do not overwrite an existing `.env`.
+
+```dotenv
+VITE_BACKEND_URL=http://localhost:7084
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_public_key
+```
+
+All three values are required. They are public browser configuration. Backend
+URLs must be absolute HTTP(S) without credentials, query, fragment, whitespace,
+or backslashes. Supabase uses an HTTPS project origin and a publishable key.
+No database or privileged keys belong in Vite. The ignored local environment is
+never committed. Restart Vite after changes; production captures values at build
+time.
 
 ## Everyday startup
-
-The backend is a separate process, normally at `http://localhost:7084`.
 
 Terminal 1:
 
@@ -58,51 +51,134 @@ cd /Users/5177394/creative-pitch-frontend
 ./run.sh
 ```
 
-Open `http://localhost:3000`. The script binds to `127.0.0.1` by default, checks
-runtime/dependencies/configuration, and fails if the port is occupied. It never
-installs packages, kills a port owner, or starts the backend/database. Ctrl-C
-stops the frontend process.
+Open `http://localhost:3000/concepts`. A signed-out visitor is sent to the real
+login form. Enter existing account credentials privately in the browser. FastAPI
+must verify the account's active profile before the private workspace appears.
 
-Explicit overrides work, for example:
+The launcher checks runtime, dependencies, and required public configuration. It
+never installs packages, kills port owners, starts a database, or runs migrations.
+If ports are occupied, leave those processes alone. Temporary matching overrides:
 
 ```bash
-HOST=127.0.0.1 PORT=3001 ./run.sh
+# Backend terminal
+PORT=7085 ALLOWED_ORIGINS='["http://localhost:3001","http://localhost:3002"]' ./run.sh
+
+# Frontend terminal
+PORT=3001 VITE_BACKEND_URL=http://localhost:7085 ./run.sh
 ```
 
-If you use a different frontend origin, the separate backend must permit that
-origin through CORS. A failed browser connection may mean the backend is stopped
-or that its CORS configuration does not allow the frontend origin.
+The backend must allow the exact browser origin, including hostname and port.
+A successful curl request alone does not prove browser CORS.
 
-## Environment
+## Routes and use
 
-The only application variable is public browser configuration:
+- `/`: Overview, with the real workspace/sign-in action and secondary diagnostics.
+- `/login`: email/password sign-in and explicit access states.
+- `/concepts`: My Concepts, in the backend's ordering.
+- `/concepts/new`: an unsaved local editor; opening it creates no record.
+- `/concepts/:conceptId`: the owner's current Working Draft.
+- Unmatched paths keep the Page not found experience.
+- `/spikes/writing-canvas`: development-only experiment.
 
-```dotenv
-VITE_BACKEND_URL=http://localhost:7084
+Enter a title, optional free-text category, and formatted content. The first
+explicit Save Draft sends POST, captures the returned ID, and replaces the URL
+without replacing the editor. Later saves PUT the same ID. Leave via My Concepts
+and use Open draft to reopen current backend data. Blank stored titles display
+as Untitled concept without writing that fallback to the database.
+
+Save feedback persists: Not saved yet, Unsaved changes, Saving, Saved, or Save
+failed. The last-confirmed time comes from `draft.updated_at` in the browser's
+local date/time format. Typing remains enabled during saving. A response confirms
+only the detached request snapshot; newer typing stays unsaved and undo history
+remains available. A failed list refresh does not reverse a successful save.
+
+A lost create response may mean the Concept was created. Work stays in memory;
+check My Concepts in a new tab before a deliberate retry, keeping this working
+copy open. Retrying creation warns that it can
+produce a duplicate. There is no idempotency key or exactly-once guarantee.
+
+## Identity, privacy, and recovery
+
+Supabase's SDK owns session persistence and refresh in its normal browser storage.
+There is no second token store. FastAPI `/api/v1/me` supplies the application UUID,
+display name, and Writer/Admin role. Session metadata grants no application role.
+The profile UUID must match the current session's user. Both roles access only
+their own Concepts through FastAPI; the frontend never calls Supabase tables/RPC.
+
+Protected requests obtain current tokens at request time, omit cookies, refuse
+redirects, and use only the configured backend origin. Public health/info requests
+remain independent. Owner-scoped query keys include an account generation;
+account changes and confirmed local-session logout cancel/remove private caches
+and discard the previous editor. Same-account token refresh does not reset it.
+
+Dirty in-app links, Back/Forward, and voluntary logout use one Mantine discard
+confirmation. Refresh/tab close use beforeunload only while protection is needed;
+browser support and warning wording vary. An in-flight write may finish after
+leaving. Discard affects the local working copy, not the stored draft.
+
+A save 401 disables protected actions while retaining the editor in memory.
+Reauthentication must verify the same user to resume that buffer. A different
+account clears it. Missing/inactive profiles show access denied; backend/service
+outages do not become wrong-password errors. Local-session logout is checked,
+and failure is reported truthfully. Already-issued JWTs can remain valid until
+expiry; backend expiration behavior is unchanged.
+
+No autosave, offline queue, or local/sessionStorage recovery of private documents
+exists. Refreshing without a successful save can lose work. There is no backend
+revision or conditional-save field: two tabs can overwrite each other's saves.
+Publishing, Pitch Versions, reviews, uploads, deletion, shared browsing, and the
+pipeline remain unsupported.
+
+## API and document contract
+
+Authenticated routes are `GET /api/v1/me`, `POST /api/v1/concepts`,
+`GET /api/v1/concepts/mine`, `GET /api/v1/concepts/{id}`, and
+`PUT /api/v1/concepts/{id}/draft`. POST (201) and PUT (200) send only:
+
+```json
+{
+  "title": "",
+  "category": null,
+  "written_content": { "type": "doc", "content": [{ "type": "paragraph" }] }
+}
 ```
 
-Vite reads `.env`, `.env.local`, or an explicitly supplied environment variable.
-Restart Vite after changing it. Production builds capture its value at build
-time. The app requires an absolute HTTP(S) URL, rejects credentials, query
-parameters, fragments, whitespace, and backslashes, and removes only one trailing
-slash. There is no proxy or alternate API URL policy.
+Detail is `{id, created_at, draft: {title, category, written_content, created_at,
+updated_at}}`. List summaries are `{id, title, category, created_at,
+draft_updated_at}`; listing does not fetch document bodies.
 
-Never put passwords, database credentials, private tokens, or service-role keys
-in `VITE_*` variables. No cookies or authentication headers are sent.
+Titles are trimmed, may be blank, and allow 200 Unicode characters. Categories
+are trimmed, optional, and allow 80 characters; blank becomes null. The document
+limit is 256 KiB of compact UTF-8 JSON. NUL, invalid Unicode, unsupported data,
+and over-limit input produce safe feedback. Backend 401/403/404/422/503 and
+malformed responses remain distinct, with raw error details kept out of the UI.
 
-## Connection checks
+Before loading, the configured editor schema and safe-link policy validate
+nested content. Unknown nodes, marks, fields, or attributes cannot be silently
+stripped and then saved over the original. An incompatible draft has no enabled
+save action. JSONB key reordering does not cause false dirty state.
 
-Overview requests `/health`, `/ready`, and `/api/v1/info` when mounted. It displays
-checking, API unavailable, API connected/database unavailable, or ready. An
-unexpected readiness error is shown as unconfirmed, not a confirmed database
-outage. Safe app information is independent of readiness.
+## Development spike
 
-Retry refetches all three endpoints. Requests time out after six seconds. There
-is no polling, automatic retry, focus refetch, or reconnect loop. A one-minute
-stale window avoids unnecessary remount requests. These are point-in-time
-checks, not continuous monitoring.
+The spike consumes the Concepts feature's single editor/schema/styles through
+its public export. It retains its own synthetic sample, read-only snapshot view,
+JSON inspector, clone/reload controls, and isolated storage key:
+`creative-pitch:writing-canvas-spike:v1`. No snapshot is imported into an account.
 
-## Quality checks and build
+Load sample → Save test snapshot → Reload test snapshot → Read-only preview →
+Clone snapshot to working copy remains the experiment sequence. Replacement and
+deletion are explicit and confirmed. Clearing a working copy leaves the snapshot;
+deleting a snapshot leaves unrelated storage. Use synthetic content only.
+
+Supported formatting remains paragraphs, H1–H3, bold, italic, bullet/ordered lists,
+hard breaks, safe HTTP(S) links, and undo/redo. No images or new extensions were
+added. Unsupported pasted HTML retains only text and supported formatting.
+
+Production contains the real editor, but excludes the spike route, snapshot
+storage/tooling, and sample. `demo.html` remains a read-only visual reference and
+is not a production asset.
+
+## Verification
 
 ```bash
 npm run lint
@@ -111,124 +187,42 @@ npm run typecheck
 npm test
 npm run build
 bash -n run.sh
+git diff --check
 ```
 
-Use `npm run format` to apply formatting and `npm run test:watch` while developing.
-Tests mock fetch; CI needs no backend, database, credentials, or cloud service.
-The GitHub Actions workflow mirrors the commands above. Build output goes to
-ignored `dist/`. No production hosting is configured.
+Tests use fabricated public configuration and mocked Auth/fetch boundaries with
+real Tiptap/ProseMirror. CI needs no live backend, credentials, or database.
+Automated account-isolation tests do not verify hosted cross-owner authorization.
 
-## Routes and next boundary
+Browser verification uses isolated Chrome with synthetic network responses at
+1440 × 900 and 390 × 844. Screenshots are kept in ignored
+`.verification/product-slice/`. Resized desktop checks do not verify physical
+phone keyboards, touch selection, or virtual-keyboard occlusion.
 
-`/` renders the temporary FoundationPage; unmatched paths render Page not found.
-Overview remains the production navigation item. Development builds also show
-Writing Canvas Spike on desktop and in the mobile drawer. The FoundationPage
-Design preview buttons demonstrate local interaction and never submit or save data.
+Real Supabase login and the hosted create/save/reopen round trip require private
+user credential entry. Native Chrome control was unavailable because Computer Use
+permissions were not granted. No real acceptance Concept has been created in this
+frontend implementation run. No remote CI or deployment is claimed.
 
-Authentication/session transport and product API integration remain separately
-scoped work. See [frontend architecture](docs/frontend-architecture.md)
-for layer responsibilities and the proposed future boundaries.
+Live browser checks against the temporarily launched backend on port 7085 observed
+200 for health/info, 503 `database_unavailable` for readiness, and 401 for requests
+using an intentionally invalid token. Browser-generated Authorization/Content-Type
+preflights for GET, POST, and PUT returned 200. These checks prove CORS and rejection,
+not successful application access or persisted writes. Database connectivity was
+not investigated or changed as part of this frontend task.
 
-## Writing-canvas development spike
-
-This experiment tests document-style writing, structured JSON round trips,
-read-only rendering, and editing a detached copy of a saved source. It is not
-pitch management or a production editor rollout. Use synthetic sample content,
-not confidential pitches. The experience still awaits Vyncent's evaluation.
-
-No backend is needed. With the normal frontend environment configured:
+For production preview, build with the intended backend URL before starting:
 
 ```bash
-./run.sh
+VITE_BACKEND_URL=http://localhost:7084 npm run build
+npm run preview -- --port 3002
 ```
 
-Open `http://localhost:3000/spikes/writing-canvas`. If 3000 is occupied, leave
-its process alone and use `PORT=3001 ./run.sh`, then open
-`http://localhost:3001/spikes/writing-canvas`. Verification used 3001 because
-3000 was occupied. No backend or CORS changes are needed for this route.
-
-Start with **Load sample**, edit the title/body, then **Save test snapshot** →
-**Reload test snapshot** → **Read-only preview** → **Clone snapshot to working
-copy** → edit the copy. The document starts empty. Loading the synthetic sample
-never saves automatically; replacing changed writing asks for confirmation.
-
-| Action                         | Meaning                                                                                                                                  |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Save test snapshot             | Saves title and `editor.getJSON()` to one browser key. Replacing different stored content requires confirmation.                         |
-| Reload test snapshot           | Reads and validates storage again, then creates a fresh editor with empty undo history. Confirms before discarding changed writing.      |
-| Read-only preview              | Shows the saved snapshot while keeping the working editor mounted separately. Text can be selected/copied; safe links open in a new tab. |
-| Clone snapshot to working copy | Creates a detached editable copy with empty undo history. Does not save or alter its source; confirms before replacing changed writing.  |
-| Inspect saved JSON             | Collapsed, escaped view of the actual stored envelope, not unsaved writing.                                                              |
-| Clear working copy             | Confirms before clearing title/body. Leaves the saved snapshot alone.                                                                    |
-| Delete test snapshot           | Confirms before removing only this spike's storage key. Keeps the working copy and unrelated storage.                                    |
-| Check browser storage          | Reads storage again, including after a controlled local storage change.                                                                  |
-
-Only explicitly saved snapshots survive refresh. After refresh, select **Reload
-test snapshot** to restore one. Storage uses
-`creative-pitch:writing-canvas-spike:v1`; it belongs to the browser profile and
-origin. `localhost:3001`, `localhost:3000`, and `127.0.0.1:3001` have separate
-storage. There is no autosave, API persistence, file import, or history database.
-Invalid/incompatible stored values are kept until explicitly replaced or deleted.
-Storage failures do not produce a success message. Another tab's changes are
-checked before replacement/deletion; this is not a collaborative storage system.
-
-The paragraph selector offers H1/H2/H3 and an explicit return to paragraph.
-The toolbar supports bold, italic, bullet/numbered lists, add/edit/remove link,
-undo and redo. Supported Tiptap keyboard shortcuts remain local to the editor.
-Links require complete HTTP(S) addresses. Images, tables, code, blockquotes,
-underline, strike, and other excluded structures are not registered. Pasting
-unsupported HTML keeps available text and supported marks; image content and
-original table layout are lost. Complex external paste sources are not exhaustively
-verified.
-
-### Versions and implementation notes
-
-Added `@mantine/tiptap` **9.6.1**, matching core/hooks, and `@tiptap/core`,
-`@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`, `@tiptap/extension-link`,
-`@tiptap/extension-placeholder` at **3.31.3**. The Link package satisfies
-Mantine's peer requirement; core and ProseMirror are directly imported for
-schema validation and read-only protection. No existing stack versions changed.
-All are exact npm-managed dependencies; no paid extensions or services are used.
-
-StarterKit's Link is disabled for Mantine's Link, excluded extensions are disabled,
-and only StarterKit supplies undo history. `shouldRerenderOnTransaction` updates
-controls within the writing component. Reload/clone reset its React key instead
-of calling `setContent` on every keystroke. A small Mantine link dialog supplies
-explicit URL errors and accessible controls. Editor styles load with the lazy
-feature after core styles; Mantine and the shared theme/resolver own the visual
-defaults, with page and feature composition in scoped CSS Modules.
-
-Official references: [Mantine integration](https://mantine.dev/x/tiptap/),
-[Tiptap 3 migration](https://mantine.dev/guides/tiptap-3-migration/),
-[Tiptap React](https://tiptap.dev/docs/editor/getting-started/install/react),
-[persistence](https://tiptap.dev/docs/editor/core-concepts/persistence),
-[editor instance](https://tiptap.dev/docs/editor/api/editor),
-[setContent](https://tiptap.dev/docs/editor/api/commands/content/set-content),
-[StarterKit](https://tiptap.dev/docs/editor/extensions/functionality/starterkit),
-[Link](https://tiptap.dev/docs/editor/extensions/marks/link), and
-[invalid content](https://tiptap.dev/docs/guides/invalid-schema).
-[Glean Canvas](https://docs.glean.com/user-guide/assistant/glean-chat/canvas)
-informed the document-first direction only; no assets, branding, AI, or proprietary
-code were copied.
-
-### Verification and limits
-
-The foundation and spike have 47 Vitest tests, including complete
-normalized document comparisons, source-byte immutability, storage failures,
-confirmations, and route guards. Tests use real Tiptap/ProseMirror. Shared setup
-uses jsdom's Storage rather than Node 25's global storage and small font/layout
-stubs; paste tests supply a missing event constructor. These do not simulate
-visual layout or native selection.
-
-Isolated local Chrome checks at 1440 × 900 and 390 × 844 cover formatting,
-selection, paste, links, reload/full refresh, read-only behavior, copying,
-cloning, scrolling, responsive navigation, and focus. Editor checks showed no
-console warnings, runtime errors, or backend/content requests. Physical mobile
-keyboards, touch selection, and virtual-keyboard occlusion are unverified.
-Screenshots and temporary verification scripts are in ignored `.verification/`.
-No remote CI or hosted deployment ran.
-
-The production preview on temporary port 3002 keeps Overview and not-found
-behavior, hides spike navigation, and does not touch the spike storage key.
-A literal Vite development guard removes the lazy editor import and its assets
-from the production build. The dev route itself does not mount system-status.
+Use `http://localhost:3002/concepts`; the backend must allow that origin.
+See [frontend architecture](docs/frontend-architecture.md) for ownership and
+[Supabase session guidance](https://supabase.com/docs/reference/javascript/auth-getsession),
+[local sign-out scope](https://supabase.com/docs/reference/javascript/auth-signout),
+[React Router blocking](https://reactrouter.com/how-to/navigation-blocking),
+[TanStack cancellation](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation),
+[Mantine Tiptap](https://mantine.dev/x/tiptap/), and
+[Tiptap persistence](https://tiptap.dev/docs/editor/core-concepts/persistence).

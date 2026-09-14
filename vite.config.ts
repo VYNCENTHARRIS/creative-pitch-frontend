@@ -7,7 +7,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    env: { VITE_BACKEND_URL: 'http://localhost:7084' },
+    env: {
+      VITE_BACKEND_URL: 'http://localhost:7084',
+      VITE_SUPABASE_URL: 'https://auth.example.test',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_fabricated_test_configuration',
+    },
     clearMocks: true,
     restoreMocks: true,
     unstubGlobals: true,

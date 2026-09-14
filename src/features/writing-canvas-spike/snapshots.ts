@@ -1,5 +1,5 @@
 import { isRecord } from '../../shared/lib/isRecord'
-import { validateDocument } from './editor'
+import { validateDocument } from '../concepts'
 import type { TestSnapshot, WorkingDocument } from './types'
 
 export const SNAPSHOT_KEY = 'creative-pitch:writing-canvas-spike:v1'

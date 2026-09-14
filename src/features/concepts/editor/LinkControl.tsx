@@ -4,7 +4,7 @@ import { RichTextEditor } from '@mantine/tiptap'
 import { IconLink } from '@tabler/icons-react'
 import type { Editor } from '@tiptap/core'
 import { useState } from 'react'
-import { isSafeLink } from '../editor'
+import { isSafeLink } from './schema'
 
 export function LinkControl({ editor }: { editor: Editor }) {
   const [opened, setOpened] = useState(false)
@@ -65,8 +65,8 @@ export function LinkControl({ editor }: { editor: Editor }) {
               data-autofocus
             />
             <Text size="sm" c="dimmed">
-              Links open in a new tab in the saved preview. Select text first, or place the cursor
-              inside an existing link.
+              Use a complete HTTP(S) address. Select text first, or place the cursor inside an
+              existing link.
             </Text>
             <Group justify="flex-end">
               <Button variant="default" onClick={close}>

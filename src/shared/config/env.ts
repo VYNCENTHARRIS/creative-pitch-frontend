@@ -26,4 +26,27 @@ export function parseBackendUrl(value: unknown): string {
   return value.replace(/\/$/, '')
 }
 
-export const env = { backendUrl: parseBackendUrl(import.meta.env.VITE_BACKEND_URL) }
+export function parseSupabaseUrl(value: unknown): string {
+  const message = 'Set VITE_SUPABASE_URL to the HTTPS Supabase project origin.'
+  try {
+    const parsed = parseBackendUrl(value)
+    const url = new URL(parsed)
+    if (url.protocol !== 'https:' || url.pathname !== '/' || url.port) throw new Error(message)
+    return url.origin
+  } catch {
+    throw new Error(message)
+  }
+}
+
+export function parsePublishableKey(value: unknown): string {
+  if (typeof value !== 'string' || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(value)) {
+    throw new Error('Set VITE_SUPABASE_PUBLISHABLE_KEY to a public Supabase publishable key.')
+  }
+  return value
+}
+
+export const env = {
+  backendUrl: parseBackendUrl(import.meta.env.VITE_BACKEND_URL),
+  supabaseUrl: parseSupabaseUrl(import.meta.env.VITE_SUPABASE_URL),
+  supabasePublishableKey: parsePublishableKey(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY),
+}

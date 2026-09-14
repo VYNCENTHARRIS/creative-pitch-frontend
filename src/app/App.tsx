@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Anchor,
   AppShell,
-  Badge,
   Container,
   Drawer,
   Group,
@@ -12,12 +11,14 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconLayoutDashboard, IconMenu2, IconPencil } from '@tabler/icons-react'
-import { Link, useLocation } from 'react-router'
-import { AppRoutes } from './router'
+import { Link, Outlet, useLocation } from 'react-router'
+import { useAuth } from '../features/auth'
+import { UserMenu } from './UserMenu'
 import { writingCanvasEnabled } from './development'
 import classes from './App.module.css'
 
 export function App() {
+  const auth = useAuth()
   const [opened, { open, close }] = useDisclosure(false)
   const { pathname } = useLocation()
   const overview = (
@@ -47,6 +48,19 @@ export function App() {
       onClick={close}
     />
   )
+  const concepts = auth.status === 'authenticated' && (
+    <NavLink
+      component={Link}
+      w="auto"
+      className={classes.navigation}
+      to="/concepts"
+      label="My Concepts"
+      active={pathname.startsWith('/concepts')}
+      aria-current={pathname.startsWith('/concepts') ? 'page' : undefined}
+      leftSection={<IconPencil size={18} aria-hidden="true" />}
+      onClick={close}
+    />
+  )
 
   return (
     <AppShell header={{ height: 76 }} padding={0}>
@@ -72,21 +86,20 @@ export function App() {
                 </Text>
               </Group>
             </Anchor>
-            <Group visibleFrom="sm" gap="xl">
+            <Group visibleFrom="md" gap="xl">
               <nav aria-label="Main navigation">
                 <Group gap="xs" wrap="nowrap">
                   {overview}
+                  {concepts}
                   {writingCanvas}
                 </Group>
               </nav>
-              <Badge color="gray" variant="light">
-                Foundation
-              </Badge>
+              <UserMenu />
             </Group>
             <ActionIcon
               variant="subtle"
               size={44}
-              hiddenFrom="sm"
+              hiddenFrom="md"
               onClick={open}
               aria-label="Open navigation"
               aria-expanded={opened}
@@ -112,12 +125,14 @@ export function App() {
           className={classes.drawerNavigation}
         >
           {overview}
+          {concepts}
           {writingCanvas}
+          <UserMenu />
         </nav>
       </Drawer>
       <AppShell.Main id="main-content" tabIndex={-1}>
         <Container size="lg" py={{ base: 24, sm: 36 }}>
-          <AppRoutes />
+          <Outlet />
         </Container>
       </AppShell.Main>
     </AppShell>

@@ -1,8 +1,9 @@
 import { RichTextEditor } from '@mantine/tiptap'
 import { useEditor } from '@tiptap/react'
-import { documentExtensions, ReadOnlyGuard } from '../editor'
+import { documentExtensions } from '../../concepts'
+import { ReadOnlyGuard } from '../readOnlyGuard'
 import type { TestSnapshot } from '../types'
-import classes from '../WritingCanvas.module.css'
+import { documentStyles as classes } from '../../concepts'
 
 export function ReadOnlyDocument({ snapshot }: { snapshot: TestSnapshot }) {
   const editor = useEditor({

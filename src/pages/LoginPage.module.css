@@ -1,0 +1,16 @@
+.background {
+  padding: 48px 16px;
+  background: var(--workspace-wash);
+  border-radius: var(--mantine-radius-lg);
+}
+.form {
+  max-width: 480px;
+  margin-inline: auto;
+  border-radius: var(--mantine-radius-lg);
+  box-shadow: var(--surface-shadow);
+}
+@media (max-width: $mantine-breakpoint-sm) {
+  .background {
+    padding: 20px 0;
+  }
+}

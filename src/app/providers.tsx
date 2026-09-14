@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type PropsWithChildren } from 'react'
 import { cssVariablesResolver, theme } from './theme'
+import { AuthProvider } from '../features/auth'
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState(() => new QueryClient())
@@ -11,7 +12,9 @@ export function AppProviders({ children }: PropsWithChildren) {
       cssVariablesResolver={cssVariablesResolver}
       forceColorScheme="light"
     >
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
     </MantineProvider>
   )
 }

@@ -1,6 +1,7 @@
 import { Editor } from '@tiptap/core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { documentExtensions, emptyDocument, ReadOnlyGuard, validateDocument } from './editor'
+import { documentExtensions, emptyDocument, validateDocument } from '../concepts'
+import { ReadOnlyGuard } from './readOnlyGuard'
 import { sample } from './sample'
 import {
   copySnapshot,
